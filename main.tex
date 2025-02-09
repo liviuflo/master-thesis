@@ -1,0 +1,208 @@
+\documentclass[
+	%parspace, % Add vertical space between paragraphs
+	%noindent, % No indentation of first lines in each paragraph
+	%nohyp, % No hyphenation of words
+	%twoside, % Double sided format
+	%draft, % Quicker draft compilation without rendering images
+	%final, % Set final to hide todos
+]{elteikthesis}[2024/04/26]
+
+% The minted package is also supported for source highlighting
+% See elteikthesis_minted.tex for example
+%\usepackage[newfloat]{minted}
+
+% Document's metadata
+\title{LiDAR Odometry and Mapping\\Beyond RTK Accuracy } % title
+\date{2025} % year of defense
+
+% Author's metadata
+\author{Liviu-Daniel Florescu}
+\degreetitle{MSc Intelligent Field Robotic Systems (IFRoS)}
+
+% Superivsor(s)' metadata
+\supervisor{Iván Eichhardt} % internal supervisor's name
+\affiliation{Assistant Professor} % internal supervisor's affiliation
+\extsupervisor{Maximilian Fenkart} % external supervisor's name
+\extaffiliation{CTO, Sodex Innovations GmbH} % external supervisor's affiliation
+
+% University's metadata
+\university{Eötvös Loránd University} % university's name
+\faculty{Faculty of Informatics} % faculty's name
+\department{Erasmus Mundus Joint Master in \\Intelligent Field Robotic Systems} % department's name
+\city{Budapest} % city
+\logo{elte_cimer_szines} % logo
+
+% Add bibliography file
+\addbibresource{bibliography.bib}
+
+\makeglossaries
+
+\newglossaryentry{surveying}
+{
+    name=surveying,
+    description={The work of examining and recording the area and features of a piece of land in order to construct a map, plan, or detailed description thereof}
+}
+
+\newglossaryentry{pointcloud}
+{
+    name={point cloud},
+    description={A set of point coordinates obtained as the output of a scanning sensor}
+}
+
+\newglossaryentry{fieldrob}
+{
+    name={Field Robotics},
+    description={The area of robotics that focuses on robots operating in unstructured outdoor environments for tasks like agriculture or exploration}
+}
+
+\newglossaryentry{registration}
+{
+    name={registration},
+    description={The process of aligning multiple point clouds in a single coordinate system such that matching features are as close as possible}
+}
+
+\newglossaryentry{odometry}
+{
+name={odometry},
+    description={The process of computing relative displacement of a robot using on-board sensors}
+}
+
+\newglossaryentry{sfm}{
+    name={Structure from Motion (SfM)},
+    description={The task of reconstructing a 3D scene and a sequence of camera poses from a set of images}
+}
+
+\newglossaryentry{kdtree}{
+    name={k-d tree},
+    description={A data structure for organizing entries in a $k$-dimensional space using a tree structure. When $k$ is not very large, it provides logarithmic look-up time.}
+}
+
+\newglossaryentry{voxel}{
+    name={voxel},
+    description={A cuboid-shaped region in 3D space; a 3D cell.}
+}
+
+\newglossaryentry{keyframe}{
+    name={keyframe},
+    description={An image frame or 3D scan that is used for odometry estimation. Because modern sensors usually operate at higher frequencies than needed for most algorithms, it is a reasonable decision to skip frames based on a predefined pattern or condition, without sacrificing accuracy.}
+}
+
+\newacronym{lidar}{LiDAR}{Light Detection and Ranging}
+\newacronym{slam}{SLAM}{Simultaneous Localization and Mapping}
+\newacronym{ins}{INS}{Inertial Navigation System}
+\newacronym{gnss}{GNSS}{Global Navigation Satellite System}
+\newacronym{rtk}{RTK}{Real-Time Kinematics}
+\newacronym{kf}{KF}{Kalman Filter}
+\newacronym{ekf}{EKF}{Extended Kalman Filter}
+\newacronym{pf}{PF}{Particle Filter}
+\newacronym{icp}{ICP}{Iterative Closest Point}
+\newacronym{ndt}{NDT}{Normal Distributions Transform}
+\newacronym{loam}{LOAM}{LiDAR Odometry and Mapping}
+\newacronym{lio}{LIO}{LiDAR-Inertial Odometry}
+\newacronym{cnn}{CNN}{Convolutional Neural Network}
+
+
+
+% The document
+\begin{document}
+
+% Set document language
+\documentlang{english}
+
+% List of todos (not in the final document)
+%\listoftodos[\todolabel]
+
+% Custom commands
+
+\newcommand{\reffig}[1]{(Fig. \ref{fig:#1})}
+\newcommand{\refch}[1]{(Chapter \ref{ch:#1})}
+
+
+
+% Title page (mandatory)
+\maketitle
+% Topic declaration page (mandatory) - can also be attached instead
+\includepdf[pages={2,3}]{other/TDF_liviu_florescu.pdf}
+
+% Table of contents (mandatory)
+\tableofcontents
+\cleardoublepage
+
+% Main content
+\input{chapters/01_intro}
+\cleardoublepage
+
+\input{chapters/02_review}
+\cleardoublepage
+
+\input{chapters/03_methodology}
+\cleardoublepage
+
+\input{chapters/04_results}
+\cleardoublepage
+
+\input{chapters/05_conclusion}
+\cleardoublepage
+
+% \input{samples_en/intro.tex}
+% \cleardoublepage
+
+% \input{samples_en/user.tex}
+% \cleardoublepage
+
+% \input{samples_en/impl.tex}
+% \cleardoublepage
+
+% \input{samples_en/sum.tex}
+% \cleardoublepage
+
+% Acknowledgements (optional) - in case your thesis received funding or would like to express special thanks to someone
+% \chapter*{\acklabel}
+% \addcontentsline{toc}{chapter}{\acklabel}
+% In case your thesis received financial support from a project or the university, it is usually required to indicate the proper attribution in the thesis itself. Special thanks can also be expressed towards teachers, fellow students and colleagues who helped you in the process of creating your thesis.
+
+% Appendices (optional) - useful for detailed information in long tables, many and/or large figures, etc.
+% \appendix
+% \input{samples_en/sim.tex}
+% \cleardoublepage
+
+
+% Bibliography (mandatory)
+\phantomsection
+\addcontentsline{toc}{chapter}{\biblabel}
+\printbibliography[title=\biblabel]
+\cleardoublepage
+
+% List of figures (optional) - useful over 3-5 figures
+\phantomsection
+\addcontentsline{toc}{chapter}{\lstfigurelabel}
+\listoffigures
+\cleardoublepage
+
+% List of tables (optional) - useful over 3-5 tables
+% \phantomsection
+% \addcontentsline{toc}{chapter}{\lsttablelabel}
+% \listoftables
+% \cleardoublepage
+
+% List of algorithms (optional) - useful over 3-5 algorithms
+% \phantomsection
+% \addcontentsline{toc}{chapter}{\lstalgorithmlabel}
+% \listofalgorithms
+% \cleardoublepage
+
+% List of codes (optional) - useful over 3-5 code samples
+% \phantomsection
+% \addcontentsline{toc}{chapter}{\lstcodelabel}
+% \lstlistoflistings
+% \cleardoublepage
+
+% List of symbols (optional)
+%\printnomenclature
+
+{\setlength{\baselineskip}{0.6\baselineskip} % Adjust 0.9 to reduce spacing
+    \printglossary[type=\acronymtype]
+    \printglossary
+}
+
+\end{document}
