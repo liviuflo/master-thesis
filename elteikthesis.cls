@@ -318,6 +318,7 @@
 % ------------------------------
 % Use the Times font
 %\RequirePackage{mathptmx}
+\RequirePackage{lmodern}
 % ------------------------------
 
 % ------------------------------
