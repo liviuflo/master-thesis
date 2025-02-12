@@ -26,7 +26,7 @@ This formulation highlights two essential aspects of a robotic agent \reffig{rob
 
 Sensing modalities have largely different contributions to the perception mechanism. To this extent, the phrase \emph{visual dominance} was introduced by F. Colavita \cite{colavita1974human}, whose study demonstrated that humans focus more on the visual component when presented with an audiovisual stimulus, and following research has strongly confirmed this tendency \cite{Hutmacher2019} \cite{hecht2009sensory}. Unsurprisingly, a similar pattern is emerging in the case of robots, thanks to the reduced cost, familiarity and wide availability of cameras. In many situations, visual stimuli provide most of the necessary information, and this has motivated the development of various image processing algorithms.
 
-Technological innovation in the last century has lead to the situation in which artificial sensors surpass humans in both the range of signals that are perceived, as well as the accuracy of the measurements. A relevant example is the class of \acrfull{lidar} sensors which retrieve three-dimensional information about the environment at a very high frequency and with rather negligible measurement errors, in the form of \emph{\glspl{pointcloud}}. Among many applications, this type of sensors can be used to construct virtual representations of a specific environment, enabling engineers to experiment with a realistic model, evaluate construction progress or validate a finished project.
+Technological innovation in the last century has led to the situation in which artificial sensors surpass humans in both the range of signals that are perceived, as well as the accuracy of the measurements. A relevant example is the class of \acrfull{lidar} sensors which retrieve three-dimensional information about the environment at a very high frequency and with rather negligible measurement errors, in the form of \emph{\glspl{pointcloud}}. Among many applications, this type of sensors can be used to construct virtual representations of a specific environment, enabling engineers to experiment with a realistic model, evaluate construction progress or validate a finished project.
 
 \section{Problem definition}
 
@@ -44,7 +44,7 @@ SDX-Compact \reffig{sdx-compact} is the main product of Sodex Innovations GmbH, 
 Nonetheless, this suffers from two main limitations:
 
 \begin{compactitem}
-    \item Reliance on unstable signal: internally, the  depends on information from a \acrfull{gnss} receiver, which is limited to outdoor spaces and whose availability varies depending on weather conditions and surroundings (e.g. thick vegetation, tall buildings, bridges). 
+    \item Reliance on unstable signal: internally, the INS depends on information from a \acrfull{gnss} receiver, which is limited to outdoor spaces and whose availability varies depending on weather conditions and surroundings (e.g. thick vegetation, tall buildings, bridges).
     \item Unsatisfactory accuracy: when merging point cloud data, positioning or localization errors introduce inconsistencies in the final 3D model, which hinders precise planning and construction.
 \end{compactitem}
 
