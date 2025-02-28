@@ -17,7 +17,7 @@ This formulation highlights two essential aspects of a robotic agent \reffig{rob
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.7\linewidth]{robot-env.jpg}
+    \includegraphics[width=0.6\linewidth]{robot-env.jpg}
     \caption[Perception in the Robot-Environment exchange]{A simplified interpretation of the robotics paradigm. The interaction between an agent and its environment can be seen as a two-way flow: the agent alters the environment through its actions, and uses perception to observe it.}
     \label{fig:robot-env}
 \end{figure}
@@ -26,18 +26,18 @@ This formulation highlights two essential aspects of a robotic agent \reffig{rob
 
 Sensing modalities have largely different contributions to the perception mechanism. To this extent, the phrase \emph{visual dominance} was introduced by F. Colavita \cite{colavita1974human}, whose study demonstrated that humans focus more on the visual component when presented with an audiovisual stimulus, and following research has strongly confirmed this tendency \cite{Hutmacher2019} \cite{hecht2009sensory}. Unsurprisingly, a similar pattern is emerging in the case of robots, thanks to the reduced cost, familiarity and wide availability of cameras. In many situations, visual stimuli provide most of the necessary information, and this has motivated the development of various image processing algorithms.
 
-Technological innovation in the last century has led to the situation in which artificial sensors surpass humans in both the range of signals that are perceived, as well as the accuracy of the measurements. A relevant example is the class of \acrfull{lidar} sensors which retrieve three-dimensional information about the environment at a very high frequency and with rather negligible measurement errors, in the form of \emph{\glspl{pointcloud}}. Among many applications, this type of sensors can be used to construct virtual representations of a specific environment, enabling engineers to experiment with a realistic model, evaluate construction progress or validate a finished project.
+Technological innovation in the last century has led to the situation in which artificial sensors surpass humans in both the range of signals that are perceived, as well as the accuracy of the measurements. A relevant example is the class of \acrfull{lidar} sensors which retrieve three-dimensional information about the environment at a very high frequency and with rather negligible measurement errors, in the form of \emph{\glspl{pointcloud}} \reffig{pcd-example}. Among many applications, this type of sensors can be used to construct virtual representations of a specific environment, enabling engineers to experiment with a realistic model, evaluate construction progress or validate a finished project.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/pointcloud_example.jpeg}
+    \caption[Point Cloud Example]{An example point cloud (points are colored by height), capturing the 3D representation of an outdoor scene. Multiple individual scans are placed into the same coordinate system to reconstruct accurate details.}
+    \label{fig:pcd-example}
+\end{figure}
 
 \section{Problem definition}
 
 The current work addresses a common and well-known problem in the area of \gls{fieldrob}, namely \acrfull{slam}, and combines the practicality of an industrial solution with a perception-based approach.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.6\linewidth]{images/sdx-compact.jpg}
-    \caption[SDX-Compact]{The SDX-Compact manufactured by Sodex Innovations GmbH. The set of sensors consists of a 3D LiDAR scanner, three RGB cameras and a high-accuracy positioning system. Image source: \href{https://fieldwork.ch/de/produkte/geopositioning/mobile-datenerfassung/sdx-compact}{Fieldwork}}
-    \label{fig:sdx-compact}
-\end{figure}
 
 SDX-Compact \reffig{sdx-compact} is the main product of Sodex Innovations GmbH, consisting of multiple sensors that collect spatial and visual data. This module can be easily mounted on an arbitrary vehicle in order to expand its perception capabilities and convert it into a \gls{surveying} device. While the vehicle is moving, the LiDAR sensor captures 3D scans of the surroundings, as well as related metadata (timestamps, localization information, signal intensity etc.). Because the rig includes a high-accuracy \acrfull{ins}, the localization and orientation data can be used to join the collected point clouds and create a global 3D map of the traversed space.
 
@@ -62,11 +62,4 @@ The main contribution of the project consists of developing an original framewor
 
 The following chapters of this document will cover related research directions and efforts that our work builds upon \refch{review}, a detailed description of the components and algorithms involved in developing the project \refch{methodology}, an evaluation of the method based on its results \refch{results}, as well as a series of conclusions that were drawn from the overall process \refch{conclusion}.
 
-% evaluation to enable future use
-% document structure
 
-
-
-% research questions
-% motivation/justification
-% scope, limitations
