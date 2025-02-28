@@ -6,7 +6,7 @@ We present the hardware involved in sensor fusion, describe the data acquisition
 
 \section{Hardware}
 
-In this context, hardware refers to the set of sensors that were used for data collection, determined by the existing industrial setup. The solution was designed such that it does not inherently rely on any particular device, yet there is definitely a relationship between hardware capabilities, data quality and final output, so it is crucial to understand the sensors involved in the process.
+In this context, hardware refers to the set of sensors used for data collection, determined by the existing industrial setup. The data capturing system is controlled by an Nvidia Jetson board, which operates as a middle-man for time synchronisation between the sensors, and coordinates the various data streams. Even though the solution was designed such that it does not inherently rely on any particular device, the relationship between hardware capabilities, data quality and final output makes it crucial to understand the sensors involved in the process. Beyond the components described below, the setup includes three industrial grade ArkCam Basic+ wide angle cameras which provide a 1920x1080 RGB stream over Ethernet. These are not utilised within this project, but represent a noticeable motivation for future work directions.
 
 \begin{figure}
     \centering
@@ -17,7 +17,9 @@ In this context, hardware refers to the set of sensors that were used for data c
 
 \subsection{LiDAR Sensor}
 
-The SDX-Compact is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. Horizontal resolution depends on the desired output frequency. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$.  The maximum operational range is 120m, but this decreases to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
+The SDX-Compact \reffig{sdx-compact} is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. Horizontal resolution depends on the desired output frequency. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$.  The maximum operational range is 120m, but this decreases to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
+
+% mention limited fov
 
 \subsection{GNSS/INS receiver}
 
@@ -29,7 +31,7 @@ An \acrfull{imu} module records acceleration data and provides the remaining ori
 
 Like any system reliant on satellite communication, this will suffer significantly in situations where the signal propagation is disturbed (heavy clouds, ``urban canyons'', thick vegetation, spoofing), even leading to loss of \emph{\gls{gnssfix}}.
 
-\subsection{RGB Cameras}
+To conclude this section, we recognize and underline the importance of accurate extrinsic calibration between the LiDAR and the local INS coordinate frame, which has to be performed prior to any reliable data collection procedure. Given the radically different modalities of these two sensors, this is not a trivial task \cite{lidar-gps-calib} and is outside the scope of the current work.
 
 \section{Data acquisition}
 

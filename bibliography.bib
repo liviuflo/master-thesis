@@ -589,3 +589,19 @@
   url    = {https://www.septentrio.com/en/learn-more/advanced-positioning-technology/fuse-sensor-fusion},
   note   = {Accessed: 2025-02-28}
 } 
+
+@article{lidar-gps-calib,
+  author         = {Nie, Xin and Gong, Jun and Cheng, Jintao and Tang, Xiaoyu and Zhang, Yuanfang},
+  title          = {Two-Step Self-Calibration of LiDAR-GPS/IMU Based on Hand-Eye Method},
+  journal        = {Symmetry},
+  volume         = {15},
+  year           = {2023},
+  number         = {2},
+  article-number = {254},
+  url            = {https://www.mdpi.com/2073-8994/15/2/254},
+  issn           = {2073-8994},
+  abstract       = {Multi-line LiDAR and GPS/IMU are widely used in autonomous driving and robotics, such as simultaneous localization and mapping (SLAM). Calibrating the extrinsic parameters of each sensor is a necessary condition for multi-sensor fusion. The calibration of each sensor directly affects the accurate positioning control and perception performance of the vehicle. Through the algorithm, accurate extrinsic parameters and a symmetric covariance matrix of extrinsic parameters can be obtained as a measure of the confidence of the extrinsic parameters. As for the calibration of LiDAR-GPS/IMU, many calibration methods require specific vehicle motion or manual calibration marking scenes to ensure good constraint of the problem, resulting in high costs and a low degree of automation. To solve this problem, we propose a new two-step self-calibration method, which includes extrinsic parameter initialization and refinement. The initialization part decouples the extrinsic parameters from the rotation and translation part, first calculating the reliable initial rotation through the rotation constraints, then calculating the initial translation after obtaining a reliable initial rotation, and eliminating the accumulated drift of LiDAR odometry by loop closure to complete the map construction. In the refinement part, the LiDAR odometry is obtained through scan-to-map registration and is tightly coupled with the IMU. The constraints of the absolute pose in the map refined the extrinsic parameters. Our method is validated in the simulation and real environments, and the results show that the proposed method has high accuracy and robustness.},
+  doi            = {10.3390/sym15020254}
+}
+
+
