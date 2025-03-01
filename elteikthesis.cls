@@ -302,6 +302,26 @@
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
 % ------------------------------
 
+% Macros for Lie groups and algebras
+\newcommand{\LieGroup}[2]{\operatorname{#1}\left(#2\right)}
+\newcommand{\LieAlgebra}[2]{\mathfrak{#1}\left(#2\right)}
+
+% Specific shortcuts for common groups
+\newcommand{\SO}[1]{\LieGroup{SO}{#1}}
+\newcommand{\SE}[1]{\LieGroup{SE}{#1}}
+\newcommand{\so}[1]{\LieAlgebra{so}{#1}}
+
+\newcommand{\vecx}[1]{\mathbf{#1}}    % Bold vector
+\newcommand{\matx}[1]{\mathbf{#1}}    % Bold matrix
+\newcommand{\pose}{\matx{T}}
+
+\newcommand{\lidartxt}{\text{LiDAR}}
+\newcommand{\lidarframe}[1]{{}^\lidartxt#1}
+\newcommand{\lidartoego}{{}^{ego}\matx{T}_\text{LiDAR}}
+\newcommand{\egoframe}[1]{{}^{ego}#1}
+\newcommand{\egoposet}[1]{{}^W\pose_{{ego}_{#1}}}
+
+
 % ------------------------------
 % Predefined theorem-like environments
 \theoremstyle{definition}

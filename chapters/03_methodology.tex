@@ -9,10 +9,10 @@ We present the hardware involved in sensor fusion, describe the data acquisition
 In this context, hardware refers to the set of sensors used for data collection, determined by the existing industrial setup. The data capturing system is controlled by an Nvidia Jetson board, which operates as a middle-man for time synchronisation between the sensors, and coordinates the various data streams. Even though the solution was designed such that it does not inherently rely on any particular device, the relationship between hardware capabilities, data quality and final output makes it crucial to understand the sensors involved in the process. Beyond the components described below, the setup includes three industrial grade ArkCam Basic+ wide angle cameras which provide a 1920x1080 RGB stream over Ethernet. These are not utilised within this project, but represent a noticeable motivation for future work directions.
 
 \begin{figure}
-    \centering
-    \includegraphics[width=0.6\linewidth]{images/sdx-compact-on-top-nobg.png}
-    \caption[SDX-Compact]{The SDX-Compact manufactured by Sodex Innovations GmbH. The set of sensors consists of a 3D LiDAR scanner, three RGB cameras and a high-accuracy positioning system. Image source: \href{https://fieldwork.ch/de/produkte/geopositioning/mobile-datenerfassung/sdx-compact}{Fieldwork}}
-    \label{fig:sdx-compact}
+	\centering
+	\includegraphics[width=0.6\linewidth]{images/sdx-compact-on-top-nobg.png}
+	\caption[SDX-Compact]{The SDX-Compact manufactured by Sodex Innovations GmbH. The set of sensors consists of a 3D LiDAR scanner, three RGB cameras and a high-accuracy positioning system. Image source: \href{https://fieldwork.ch/de/produkte/geopositioning/mobile-datenerfassung/sdx-compact}{Fieldwork}}
+	\label{fig:sdx-compact}
 \end{figure}
 
 \subsection{LiDAR Sensor}
@@ -33,49 +33,98 @@ Like any system reliant on satellite communication, this will suffer significant
 To conclude this section, we recognize and underline the importance of accurate extrinsic calibration between the LiDAR and the local INS coordinate frame, which has to be performed prior to any reliable data collection procedure. Given the radically different modalities of these two sensors, this is not a trivial task \cite{lidar-gps-calib} and lies outside the scope of the current work.
 
 \begin{figure}
-    \centering
-    \subcaptionbox{The trajectory, overlaid on a satellite image of the region.}{
-        \includegraphics[width=0.45\linewidth]{images/example-trajectory.png}}
-    \hspace{1pt}
-    \subcaptionbox{Standard deviation of GNSS readings along the trajectory.}{
-        \includegraphics[width=0.45\linewidth]{images/example-trajectory-sigma.png}}
-    \caption[Example dataset trajectory]{An example dataset collected in rural Germany (Lienziegen).}
-    \label{fig:example-trajectory}
+	\centering
+	\subcaptionbox{The trajectory, overlaid on a satellite image of the region.}{
+		\includegraphics[width=0.45\linewidth]{images/example-trajectory.png}}
+	\hspace{1pt}
+	\subcaptionbox{Standard deviation of GNSS readings along the trajectory.}{
+		\includegraphics[width=0.45\linewidth]{images/example-trajectory-sigma.png}}
+	\caption[Example dataset trajectory]{An example dataset collected in rural Germany (Lienziegen).}
+	\label{fig:example-trajectory}
 \end{figure}
 
 % 48.97905882 lat
 % 8.86602707 lon
 
-\section{Data acquisition}
+\section{Data acquisition and pre-processing}
 
-Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (e.g. 40km/h). \reffig{example-trajectory}
-The raw sensor output is uploaded to a cloud storage facility, and is later processed into data frames that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (e.g. up to 40km/h). \reffig{example-trajectory}
+The raw sensor output is uploaded to a cloud storage facility, and is later processed into \emph{data frames} that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+
+
 
 \begin{figure}
-    \centering
-    \includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
-    \caption[Data frame synchronisation]{A visualization of the data synchronisation process. Time is discretized into fixed-size intervals, resulting in data frames of custom resolution. These are populated with information from the two sensors: LiDAR points arrive as UDP packets, with one timestamp per packet, while GNSS readings have a frequency of approx. 100Hz. A data frame size of 10ms ensures that each interval has an associated GNSS measurement.}
-    \label{fig:data-sync}
+	\centering
+	\includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
+	\caption[Data frame synchronisation]{The data synchronisation process. Time is discretized into fixed-size intervals, resulting in data frames of custom resolution. These are populated with information from the two sensors: LiDAR points arrive in groups, as UDP packets, while GNSS readings have a frequency of approx. 100Hz. We employ a data frame size of 10ms to ensure that each interval has an associated GNSS measurement, and place all corresponding packets in the same data frame.}
+	\label{fig:data-sync}
 \end{figure}
 
-The next pre-processing step consists of dividing the sequence of data frames, such that we operate on individual scans (also known as sweeps) produced by the LiDAR. A scan corresponds to a complete $360 \degree$ rotation, which takes 100ms, so we join the points in 10 consecutive data frames to obtain a single scan.
+The next pre-processing step consists of dividing the sequence of data frames such that we operate on individual scans (also known as sweeps) produced by the LiDAR. A scan corresponds to a complete $360 \degree$ rotation, which takes 100ms, so we join the points in 10 consecutive data frames to obtain a single scan.
 
-At this stage, it is worth discussing the typical distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms before the beams corresponding to azimuth $359 \degree$. This can result in undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
+Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in the East-North-Up frame. We consider the frame of the GNSS receiver as the $ego$ coordinate system. The roll $\phi$, pitch $\theta$ and yaw angles $\psi$ determine the absolute orientation, so we compute a global pose ${}^W\matx{T}_{ego} \in \SE{3}$ as:
+
+\begin{equation}
+	\notag
+	{}^W\matx{T}_{ego} = \text{Translation}(x, y, z) \cdot \text{Rotation}_y(\phi) \cdot \text{Rotation}_x(\theta) \cdot \text{Rotation}_z(\psi)
+\end{equation}
+
+where $\text{Rotation}_k(\alpha)$ is the transformation matrix corresponding to a rotation of $\alpha$ around axis $k$.
+
+A LiDAR range reading $r$, captured at azimuth $\alpha$ with an elevation angle of $\phi$, can be converted to a 3D location in the LiDAR frame:
+
+\begin{equation}
+	\notag
+	\lidarframe{\vecx{p}}= \begin{bmatrix}
+		p_x \\ p_y \\ p_z
+	\end{bmatrix}=\begin{bmatrix}
+		r \cos{\phi} \sin{\alpha} \\ r \cos{\phi} \cos{\alpha} \\ r \sin{\phi}
+	\end{bmatrix}
+\end{equation}
 
 
+If $\lidartoego$ is the pose of the LiDAR in the ego frame (from extrinsic calibration), we can compute the location of a point in the ego frame:
+
+\begin{equation}
+	\notag
+	\begin{bmatrix}
+		{}^{ego}\vecx{p}_\lidartxt \\ 1
+	\end{bmatrix}
+	= \lidartoego \begin{bmatrix}
+		\lidarframe{\vecx{p}} \\ 1
+	\end{bmatrix}
+\end{equation}
+
+At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
+
+\newcommand{\ego}{def}
+
+This open research problem \cite{motion-comp-mcdermott} is commonly addressed by estimating the sensor pose change during a sweep \cite{vicp} \cite{vizzo2023ral}, and IMU integration proves satisfactory \cite{deskewing2020}, given the short time interval involved. In our case, the ego poses  $\left[\egoposet{0}, \egoposet{1}, ...\right]$ computed from INS measurements during a sweep are used to bring all points into frame ${ego}_0$. A point $^{ego_k}\vecx{p}$ belongs to data frame $k$, so it will be replaced by:
+
+\begin{equation}
+	\notag
+	^{ego_0}\vecx{p} = {}^{ego_0}\pose_{ego_k} {}^{ego_k}\vecx{p}  = \egoposet{0}^{-1} \egoposet{k} {}^{ego_k}\vecx{p}
+\end{equation}
+
+Through this step we are effectively removing the need for sub-scan information, and creating a simpler data structure in which each scan is associated a single ${}^W\pose_{ego}$ pose (from the first data frame).
+
+
+% Some public datasets \cite{nuscenes} \cite{pixset} include already-compensated data
 % TODO write about motion compensation
 
+% TODO write about projection
+
 \begin{figure}
-    \centering
-    \subcaptionbox{Before: an artificial duplicate surface \label{fig:motion-comp-pre}}{
-        \includegraphics[width=0.45\linewidth]{images/motion-comp-pre.png}
-    }
-    \hspace{1pt}
-    \subcaptionbox{After: surface is corrected \label{fig:motion-comp-post}}{
-        \includegraphics[width=0.45\linewidth]{images/motion-comp-post.png}
-    }
-    \caption[Before and after motion compensation]{Motion artifacts and the need for motion compensation. \\Green: points from the beginning of the sweep. Red: points from the end of the sweep. Without motion compensation, the vertical surface yields two conflicting clusters, so the scan cannot be used for accurate mapping in the global frame.}
-    \label{fig:motion-comp}
+	\centering
+	\subcaptionbox{Before: an artificial duplicate surface \label{fig:motion-comp-pre}}{
+		\includegraphics[width=0.45\linewidth]{images/motion-comp-pre.png}
+	}
+	\hspace{1pt}
+	\subcaptionbox{After: surface is corrected \label{fig:motion-comp-post}}{
+		\includegraphics[width=0.45\linewidth]{images/motion-comp-post.png}
+	}
+	\caption[Before and after motion compensation]{Motion artifacts and the result of motion compensation. \\Green: points from the beginning of the sweep. Red: points from the end of the sweep. Without motion compensation, the vertical surface yields two conflicting clusters, so the scan cannot be used for accurate mapping in the global frame.}
+	\label{fig:motion-comp}
 \end{figure}
 
 
