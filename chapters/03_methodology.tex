@@ -10,16 +10,15 @@ In this context, hardware refers to the set of sensors used for data collection,
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.6\linewidth]{images/sdx-compact.jpg}
+    \includegraphics[width=0.6\linewidth]{images/sdx-compact-on-top-nobg.png}
     \caption[SDX-Compact]{The SDX-Compact manufactured by Sodex Innovations GmbH. The set of sensors consists of a 3D LiDAR scanner, three RGB cameras and a high-accuracy positioning system. Image source: \href{https://fieldwork.ch/de/produkte/geopositioning/mobile-datenerfassung/sdx-compact}{Fieldwork}}
     \label{fig:sdx-compact}
 \end{figure}
 
 \subsection{LiDAR Sensor}
 
-The SDX-Compact \reffig{sdx-compact} is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. Horizontal resolution depends on the desired output frequency. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$.  The maximum operational range is 120m, but this decreases to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
+The SDX-Compact \reffig{sdx-compact} is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$. The maximum operational range is 120m, decreasing to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
 
-% mention limited fov
 
 \subsection{GNSS/INS receiver}
 
@@ -31,9 +30,19 @@ An \acrfull{imu} module records acceleration data and provides the remaining ori
 
 Like any system reliant on satellite communication, this will suffer significantly in situations where the signal propagation is disturbed (heavy clouds, ``urban canyons'', thick vegetation, spoofing), even leading to loss of \emph{\gls{gnssfix}}.
 
-To conclude this section, we recognize and underline the importance of accurate extrinsic calibration between the LiDAR and the local INS coordinate frame, which has to be performed prior to any reliable data collection procedure. Given the radically different modalities of these two sensors, this is not a trivial task \cite{lidar-gps-calib} and is outside the scope of the current work.
+To conclude this section, we recognize and underline the importance of accurate extrinsic calibration between the LiDAR and the local INS coordinate frame, which has to be performed prior to any reliable data collection procedure. Given the radically different modalities of these two sensors, this is not a trivial task \cite{lidar-gps-calib} and lies outside the scope of the current work.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
+    \caption[Data frame synchronisation]{A visualization of the data synchronisation process. Time is discretized into fixed-size intervals, resulting in data frames of custom resolution. These are populated with information from the two sensors: LiDAR points arrive as UDP packets, with one timestamp per packet, while GNSS readings have a frequency of approx. 100Hz. A data frame size of 10ms ensures that each interval has an associated GNSS measurement.}
+    \label{fig:data-sync}
+\end{figure}
 
 \section{Data acquisition}
+
+Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area. Through a high-speed mobile internet connection, the raw sensor output is uploaded to a cloud storage facility, and is later processed into a custom format that fuses the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+
 
 \section{Solution architecture}
 
