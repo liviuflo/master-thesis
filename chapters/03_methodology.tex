@@ -32,13 +32,6 @@ Like any system reliant on satellite communication, this will suffer significant
 
 To conclude this section, we recognize and underline the importance of accurate extrinsic calibration between the LiDAR and the local INS coordinate frame, which has to be performed prior to any reliable data collection procedure. Given the radically different modalities of these two sensors, this is not a trivial task \cite{lidar-gps-calib} and lies outside the scope of the current work.
 
-
-
-\section{Data acquisition}
-
-Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (e.g. 40km/h). \reffig{example-trajectory}
-The raw sensor output is uploaded to a cloud storage facility, and is later processed into data frames that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
-
 \begin{figure}
     \centering
     \subcaptionbox{The trajectory, overlaid on a satellite image of the region.}{
@@ -50,6 +43,14 @@ The raw sensor output is uploaded to a cloud storage facility, and is later proc
     \label{fig:example-trajectory}
 \end{figure}
 
+% 48.97905882 lat
+% 8.86602707 lon
+
+\section{Data acquisition}
+
+Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (e.g. 40km/h). \reffig{example-trajectory}
+The raw sensor output is uploaded to a cloud storage facility, and is later processed into data frames that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+
 \begin{figure}
     \centering
     \includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
@@ -57,15 +58,26 @@ The raw sensor output is uploaded to a cloud storage facility, and is later proc
     \label{fig:data-sync}
 \end{figure}
 
+The next pre-processing step consists of dividing the sequence of data frames, such that we operate on individual scans (also known as sweeps) produced by the LiDAR. A scan corresponds to a complete $360 \degree$ rotation, which takes 100ms, so we join the points in 10 consecutive data frames to obtain a single scan.
+
+At this stage, it is worth discussing the typical distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms before the beams corresponding to azimuth $359 \degree$. This can result in undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
 
 
+% TODO write about motion compensation
 
-% 48.97905882 lat
-% 8.86602707 lon
-%example trajectory
+\begin{figure}
+    \centering
+    \subcaptionbox{Before: an artificial duplicate surface \label{fig:motion-comp-pre}}{
+        \includegraphics[width=0.45\linewidth]{images/motion-comp-pre.png}
+    }
+    \hspace{1pt}
+    \subcaptionbox{After: surface is corrected \label{fig:motion-comp-post}}{
+        \includegraphics[width=0.45\linewidth]{images/motion-comp-post.png}
+    }
+    \caption[Before and after motion compensation]{Motion artifacts and the need for motion compensation. \\Green: points from the beginning of the sweep. Red: points from the end of the sweep. Without motion compensation, the vertical surface yields two conflicting clusters, so the scan cannot be used for accurate mapping in the global frame.}
+    \label{fig:motion-comp}
+\end{figure}
 
-% individual scans
-% motion compensation
 
 
 \section{Solution architecture}
