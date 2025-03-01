@@ -32,16 +32,40 @@ Like any system reliant on satellite communication, this will suffer significant
 
 To conclude this section, we recognize and underline the importance of accurate extrinsic calibration between the LiDAR and the local INS coordinate frame, which has to be performed prior to any reliable data collection procedure. Given the radically different modalities of these two sensors, this is not a trivial task \cite{lidar-gps-calib} and lies outside the scope of the current work.
 
-\begin{figure}[H]
+
+
+\section{Data acquisition}
+
+Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (e.g. 40km/h). \reffig{example-trajectory}
+The raw sensor output is uploaded to a cloud storage facility, and is later processed into data frames that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+
+\begin{figure}
+    \centering
+    \subcaptionbox{The trajectory, overlaid on a satellite image of the region.}{
+        \includegraphics[width=0.45\linewidth]{images/example-trajectory.png}}
+    \hspace{1pt}
+    \subcaptionbox{Standard deviation of GNSS readings along the trajectory.}{
+        \includegraphics[width=0.45\linewidth]{images/example-trajectory-sigma.png}}
+    \caption[Example dataset trajectory]{An example dataset collected in rural Germany (Lienziegen).}
+    \label{fig:example-trajectory}
+\end{figure}
+
+\begin{figure}
     \centering
     \includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
     \caption[Data frame synchronisation]{A visualization of the data synchronisation process. Time is discretized into fixed-size intervals, resulting in data frames of custom resolution. These are populated with information from the two sensors: LiDAR points arrive as UDP packets, with one timestamp per packet, while GNSS readings have a frequency of approx. 100Hz. A data frame size of 10ms ensures that each interval has an associated GNSS measurement.}
     \label{fig:data-sync}
 \end{figure}
 
-\section{Data acquisition}
 
-Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area. Through a high-speed mobile internet connection, the raw sensor output is uploaded to a cloud storage facility, and is later processed into a custom format that fuses the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+
+
+% 48.97905882 lat
+% 8.86602707 lon
+%example trajectory
+
+% individual scans
+% motion compensation
 
 
 \section{Solution architecture}
