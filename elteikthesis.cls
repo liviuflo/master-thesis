@@ -333,6 +333,9 @@
 \newcommand{\eg}{e.g., }
 \newcommand{\ie}{i.e., }
 
+\newcommand{\RR}{{\mathbb{R}}}   % Real numbers
+
+
 
 % ------------------------------
 % Predefined theorem-like environments

@@ -11,7 +11,7 @@ In this context, hardware refers to the set of sensors used for data collection,
 \begin{figure}
 	\centering
 	\includegraphics[width=0.6\linewidth]{images/sdx-compact-on-top-nobg.png}
-	\caption[SDX-Compact]{The SDX-Compact manufactured by Sodex Innovations GmbH. The set of sensors consists of a 3D LiDAR scanner, three RGB cameras and a high-accuracy positioning system. Image source: \href{https://fieldwork.ch/de/produkte/geopositioning/mobile-datenerfassung/sdx-compact}{Fieldwork}}
+	\caption[SDX-Compact]{The SDX-Compact manufactured by Sodex Innovations GmbH. The set of sensors consists of a 3D LiDAR scanner, three RGB cameras and a high-accuracy positioning system. Image source: \href{https://www.geo-lanes.com/sodex-innovations/}{GeoLanes}}
 	\label{fig:sdx-compact}
 \end{figure}
 
@@ -153,7 +153,7 @@ At this stage, it is worth discussing the distortion effect that occurs when a r
 
 
 This open research problem \cite{motion-comp-mcdermott} is commonly addressed by estimating the sensor pose change during a sweep \cite{vicp} \cite{vizzo2023ral}, and IMU integration proves satisfactory \cite{deskewing2020}, given the short time interval involved. In our case, the ego poses
-$\left\{\egoposeti{i}{0}, \egoposeti{i}{1}, ...\right\}$
+$\left\{\egoposeti{i}{0}, \egoposeti{i}{1}, \dots, \egoposeti{i}{m}\right\}$
 computed from INS measurements during sweep $i$ are used to bring all points into the frame defined by $\egoposeti{i}{0}$. A point $^{i,k}\vecx{p}$ belongs to data frame $k$, so it will be replaced by:
 
 \begin{equation}
@@ -173,16 +173,47 @@ We also experimented with approaches that do not rely on the absolute pose measu
 Through this step we are effectively removing the need for sub-scan information and creating a simpler data structure in which each scan is associated a single $\egoposet{}$ pose (from the first data frame), and the points in a sweep can be treated as a unified set.
 
 Without loss of generality, we transform the sequence of global poses
-$\left\{\posei{0}, \posei{1}, ...\right\}$
-into the frame of the first pose, by multiplying each pose with  $\left(\posei{0}\right)^{-1}$, to obtain $\left\{\pose_0, \pose_1, ...\right\}$. Naturally, $\pose_0$ will always be $\matx{I}_4$, which simplifies the initialization of the odometry estimation. The covariance of each pose is adjusted  with the adjoint of $\left(\posei{0}\right)^{-1}$.
+$\left\{\posei{0}, \posei{1}, \dots, \posei{n}\right\}$
+into the frame of the first pose, by multiplying each pose with  $\left(\posei{0}\right)^{-1}$, to obtain $\left\{\pose_0, \pose_1, \dots, \pose_n\right\}$. Naturally, $\pose_0$ will always be $\matx{I}_4$, which simplifies the initialization of the odometry estimation. The covariance of each pose is adjusted  with the adjoint of $\left(\posei{0}\right)^{-1}$.
 
 
 % TODO write about projection
 
 \section{Solution architecture}
 
-At its core, the odometry and mapping solution that we propose requires minimal input: a sequence of (motion-compensated) point clouds captured by a moving LiDAR scanner, and a timestamp for each scan. If available, the output of a localization or INS sensor can be employed to provide absolute constraints, but this is not a strict requirement.
+At its core, the odometry and mapping solution that we propose requires minimal input: a sequence of point clouds captured by a moving LiDAR scanner, and a timestamp for each scan. If available, absolute localization/INS measurements can be used as additional input.
 
-Let $\mathfrak{P} = \left\{ P_0, P_1, ... \right\}$ represent the set of point clouds that we operate on, and $\mathfrak{T} = \left\{ \gtposei{0}, \gtposei{1}, ... \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\matx{T}_i = \gtposei{i}^{-1} \gtposei{i+1}$, the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the trajectory could be reconstructed by accumulating the computed displacement. Perhaps with the exception of some simulation environments, such an approach is actually not feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
+Let $\mathfrak{P} = \left\{ P_0, P_1, \dots, P_n\right\}$ represent the set of point clouds that we operate on, with point coordinates $P_k = \left\{\vecx{p}_{k,i} \vert \vecx{p}_{k,i} \in \RR^3 \right\}$ expressed in the local frame, and $\widehat{\mathfrak{T}} = \left\{ \gtposei{0}, \gtposei{1}, \dots, \gtposei{n} \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\matx{T}_i = \gtposei{i}^{-1} \gtposei{i+1}$, \ie the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the complete trajectory could be reconstructed by accumulating the computed displacement. Unfortunately, with the exception of some simulation environments, such an approach is not actually feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
+
+The output of our solution can be formulated simply as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose $\pose_k \in \SE{3}$ represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, transformed according to their respective pose:
+\begin{equation}
+	\notag
+	M\left(\mathfrak{T}, \mathfrak{P}\right) =
+	\left\{
+	\vecx{p}_{k,i}^* \Big|
+	\begin{bmatrix}
+		\vecx{p}_{k,i}^* \\ 1
+	\end{bmatrix} =
+	\pose_k \begin{bmatrix}
+		\vecx{p}_{k,i} \\ 1
+	\end{bmatrix}, \vecx{p}_{k,i} \in P_k, k \in \overline{0 \dots n}
+	\right\}
+\end{equation}
+
+This uncovers two possible evaluation directions, which also constitute the high-level aims of our method. On one hand, the output trajectory should match the actual path of the system as accurately as possible. On the other, the final map should not hide or damage small details in the scene, to obtain a high-quality 3D reconstruction. Both of these aspects will be analyzed thoroughly in Chapter \ref{ch:results}.
+
+
+% Similarly, $M\left(\widehat{\mathfrak{T}}, \mathfrak{P}\right)$ represents the ground truth map.
+
+
+
+% The challenge lies in 
+
+% \begin{compactitem}
+% 	\item The trajectory described by this sequence matches the path of the system in the real world as accurately as possible
+% 	\item The full point cloud,
+% \end{compactitem}
+
+% intermediate challenge = get as good of a displacement estimate, despite the noise in the data
 
 
