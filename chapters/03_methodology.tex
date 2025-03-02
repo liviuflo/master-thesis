@@ -52,7 +52,6 @@ Data is collected by mounting the sensor rig on the roof of a vehicle, and drivi
 The raw sensor output is uploaded to a cloud storage facility, and is later processed into \emph{data frames} that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
 
 
-
 \begin{figure}
 	\centering
 	\includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
@@ -62,14 +61,53 @@ The raw sensor output is uploaded to a cloud storage facility, and is later proc
 
 The next pre-processing step consists of dividing the sequence of data frames such that we operate on individual scans (also known as sweeps) produced by the LiDAR. A scan corresponds to a complete $360 \degree$ rotation, which takes 100ms, so we join the points in 10 consecutive data frames to obtain a single scan.
 
-Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in the East-North-Up frame. We consider the frame of the GNSS receiver as the $ego$ coordinate system. The roll $\phi$, pitch $\theta$ and yaw angles $\psi$ determine the absolute orientation, so we compute a global pose ${}^W\matx{T}_{ego} \in \SE{3}$ as:
+Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in the East-North-Up frame. We consider the frame of the GNSS receiver as the $ego$ coordinate system. The roll $\phi$, pitch $\theta$ and yaw angles $\psi$ determine the absolute orientation, so we compute a global pose $\egoposet{} \in \SE{3}$ as:
 
 \begin{equation}
 	\notag
-	{}^W\matx{T}_{ego} = \text{Translation}(x, y, z) \cdot \text{Rotation}_y(\phi) \cdot \text{Rotation}_x(\theta) \cdot \text{Rotation}_z(\psi)
+	\egoposet{} = \begin{bmatrix}
+		\matx{R} & \vecx{t} \\ \vecx{0} & 1
+	\end{bmatrix} =
+	\text{Translation}(x, y, z) \cdot
+	\rotmtx{y}{\phi} \cdot
+	\rotmtx{x}{\theta} \cdot
+	\rotmtx{z}{\psi}
 \end{equation}
 
-where $\text{Rotation}_k(\alpha)$ is the transformation matrix corresponding to a rotation of $\alpha$ around axis $k$.
+where $\text{Rot}_k(\alpha)$ is the transformation matrix corresponding to a rotation of $\alpha$ around axis $k$.
+Because the sensor provides error estimates in the form of global one-sigma values $\left\{ \sigma_x, \sigma_y, \sigma_z, \sigma_\phi, \sigma_\theta, \sigma_\psi\right\}$, we construct the covariance matrix
+
+\begin{equation}
+	\notag
+	\matx{\Sigma} = \text{diag}\left(\varx{x}, \varx{y}, \varx{z}, \varx{\phi}, \varx{\theta}, \varx{\psi}\right)
+\end{equation}
+
+and transform it using the adjoint map of the rotation component
+
+\begin{equation}
+	\notag
+	\matx{\Sigma}_{ego} =
+	\adjoint{\matx{R}}{\vecx{0}} \cdot
+	\matx{\Sigma} \cdot
+	\adjoint{\matx{R}}{\vecx{0}}^T
+\end{equation}
+
+where
+\begin{equation}
+	\notag
+	\adjoint{\matx{R}}{\vecx{t}} =
+	\begin{bmatrix}
+		\matx{R}                   & \vecx{0} \\
+		\skewsym{\vecx{t}}\matx{R} & \matx{R}
+	\end{bmatrix}
+	\text{ and }
+	\skewsym{\vecx{t}} =
+	\begin{bmatrix}
+		0    & -t_3 & t_2  \\
+		t_3  & 0    & -t_1 \\
+		-t_2 & t_1  & 0
+	\end{bmatrix}
+\end{equation}
 
 A LiDAR range reading $r$, captured at azimuth $\alpha$ with an elevation angle of $\phi$, can be converted to a 3D location in the LiDAR frame:
 
@@ -95,24 +133,6 @@ If $\lidartoego$ is the pose of the LiDAR in the ego frame (from extrinsic calib
 	\end{bmatrix}
 \end{equation}
 
-At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
-
-\newcommand{\ego}{def}
-
-This open research problem \cite{motion-comp-mcdermott} is commonly addressed by estimating the sensor pose change during a sweep \cite{vicp} \cite{vizzo2023ral}, and IMU integration proves satisfactory \cite{deskewing2020}, given the short time interval involved. In our case, the ego poses  $\left[\egoposet{0}, \egoposet{1}, ...\right]$ computed from INS measurements during a sweep are used to bring all points into frame ${ego}_0$. A point $^{ego_k}\vecx{p}$ belongs to data frame $k$, so it will be replaced by:
-
-\begin{equation}
-	\notag
-	^{ego_0}\vecx{p} = {}^{ego_0}\pose_{ego_k} {}^{ego_k}\vecx{p}  = \egoposet{0}^{-1} \egoposet{k} {}^{ego_k}\vecx{p}
-\end{equation}
-
-Through this step we are effectively removing the need for sub-scan information, and creating a simpler data structure in which each scan is associated a single ${}^W\pose_{ego}$ pose (from the first data frame).
-
-
-% Some public datasets \cite{nuscenes} \cite{pixset} include already-compensated data
-% TODO write about motion compensation
-
-% TODO write about projection
 
 \begin{figure}
 	\centering
@@ -123,15 +143,43 @@ Through this step we are effectively removing the need for sub-scan information,
 	\subcaptionbox{After: surface is corrected \label{fig:motion-comp-post}}{
 		\includegraphics[width=0.45\linewidth]{images/motion-comp-post.png}
 	}
-	\caption[Before and after motion compensation]{Motion artifacts and the result of motion compensation. \\Green: points from the beginning of the sweep. Red: points from the end of the sweep. Without motion compensation, the vertical surface yields two conflicting clusters, so the scan cannot be used for accurate mapping in the global frame.}
+	\caption[Motion compensation: before and after]{Motion artifacts and the result of motion compensation. \\Green: points from the beginning of the sweep. Red: points from the end of the sweep. Without motion compensation, the vertical surface yields two conflicting clusters, so the scan cannot be used for accurate mapping in the global frame.}
 	\label{fig:motion-comp}
 \end{figure}
 
+At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
 
+
+This open research problem \cite{motion-comp-mcdermott} is commonly addressed by estimating the sensor pose change during a sweep \cite{vicp} \cite{vizzo2023ral}, and IMU integration proves satisfactory \cite{deskewing2020}, given the short time interval involved. In our case, the ego poses
+$\left\{\egoposeti{i}{0}, \egoposeti{i}{1}, ...\right\}$
+computed from INS measurements during sweep $i$ are used to bring all points into the frame defined by $\egoposeti{i}{0}$. A point $^{i,k}\vecx{p}$ belongs to data frame $k$, so it will be replaced by:
+
+\begin{equation}
+	\notag
+	\begin{bmatrix}
+		^{i,0}\vecx{p} \\ 1
+	\end{bmatrix}
+	= {}^{i,0}\pose_{i,k} \begin{bmatrix}
+		{}^{i,k}\vecx{p} \\ 1
+	\end{bmatrix}  = \left({\egoposeti{i}{0}}\right)^{-1} \egoposeti{i}{k} \begin{bmatrix}
+		{}^{i,k}\vecx{p} \\ 1
+	\end{bmatrix}
+\end{equation}
+
+We also experimented with approaches that do not rely on the absolute pose measurements for subsections of the sweep, such as interpolation using point timestamps or point indices (based on the order in which the points are returned), but these did not yield better results. A potential drawback of our method is that it disregards the localization noise, which could prove counterproductive if the GNSS receiver has low accuracy.
+
+Through this step we are effectively removing the need for sub-scan information, and creating a simpler data structure in which each scan is associated a single $\egoposet{}$ pose (from the first data frame), and the points in a sweep can be treated as a unified set.
+
+Without loss of generality, we transform the sequence of global poses
+$\left\{\posei{0}, \posei{1}, ...\right\}$
+into the frame of the first pose, by multiplying each pose with  $\left(\posei{0}\right)^{-1}$, to obtain $\left\{\pose_0, \pose_1, ...\right\}$. Naturally, $\pose_0$ will always be $\matx{I}_4$, which simplifies the initialization of the odometry estimation. The covariance of each pose is adjusted  with the adjoint of $\left(\posei{0}\right)^{-1}$.
+
+
+% TODO write about projection
 
 \section{Solution architecture}
 
-
+At its core, the odometry and mapping solution that we propose requires
 
 
 
