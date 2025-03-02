@@ -19,12 +19,13 @@ In this context, hardware refers to the set of sensors used for data collection,
 
 The SDX-Compact \reffig{sdx-compact} is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$. The maximum operational range is 120m, decreasing to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
 
+The same device has been used for LiDAR odometry applications in the past \cite{kicp}, and has similar specifications to other popular scanners, such as Velodyne VLP-32C, Ouster OS1-32 or Robosense Helios 32.
 
 \subsection{GNSS/INS receiver}
 
 Another component of the sensor stack is the Septentrio AsteRx SBi3 Pro+ GNSS/INS receiver \cite{Septentrio_AsteRx_SBi3_Pro+}, which provides global positioning and orientation data at a rate of 100Hz. Internally, this relies on two distinct mechanisms.
 
-The localization information comes from a dual antenna GNSS module compatible with several GNSS consellations (e.g. \acrshort{gps}, \acrshort{glonass}, Galileo), to ensure optimal worldwide coverage. In standalone mode, the advertised typical accuracy is 1m, but the receiver also acts as an NTRIP (a protocol for differential GPS) client, gathering correction information, in order to achieve centimeter-level accuracy.
+The localization information comes from a dual antenna GNSS module compatible with several GNSS consellations (\eg \acrshort{gps}, \acrshort{glonass}, Galileo), to ensure optimal worldwide coverage. In standalone mode, the advertised typical accuracy is 1m, but the receiver also acts as an NTRIP (a protocol for differential GPS) client, gathering correction information, in order to achieve centimeter-level accuracy.
 
 An \acrfull{imu} module records acceleration data and provides the remaining orientation angles (roll, pitch, yaw) to compute the complete pose, in 6 \acrfull{dof}. This is integrated with the absolute GNSS measurements using the patented FUSE+ technology \cite{Septentrio_FUSE_Sensor_Fusion}, resulting in an orientation error below  $\text{5-10}\degree$.
 
@@ -48,14 +49,15 @@ To conclude this section, we recognize and underline the importance of accurate 
 
 \section{Data acquisition and pre-processing}
 
-Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (e.g. up to 40km/h). \reffig{example-trajectory}
+Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (\eg up to 40km/h). \reffig{example-trajectory} In comparison with other public datasets \cite{nuscenes} \cite{pixset}, capturing data in non-urban environments introduces some challenges --- scenes dominated by vegetation, with few identifiable features, uneven terrain --- while minimizing others --- negligible amount of dynamic objects, no tall buildings that could affect GNSS signal propagation.
+
 The raw sensor output is uploaded to a cloud storage facility, and is later processed into \emph{data frames} that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
 
 
 \begin{figure}
 	\centering
 	\includegraphics[width=0.7\linewidth]{images/data_sync.jpg}
-	\caption[Data frame synchronisation]{The data synchronisation process. Time is discretized into fixed-size intervals, resulting in data frames of custom resolution. These are populated with information from the two sensors: LiDAR points arrive in groups, as UDP packets, while GNSS readings have a frequency of approx. 100Hz. We employ a data frame size of 10ms to ensure that each interval has an associated GNSS measurement, and place all corresponding packets in the same data frame.}
+	\caption[Data frame synchronisation]{The data synchronisation process.\\Time is discretized into fixed-size intervals, resulting in data frames of custom resolution. These are populated with information from the two sensors: LiDAR points arrive in groups, as UDP packets, while GNSS readings have a frequency of approx. 100Hz. We employ a data frame size of 10ms to ensure that each interval has an associated GNSS measurement, and place all corresponding packets in the same data frame.}
 	\label{fig:data-sync}
 \end{figure}
 
@@ -168,7 +170,7 @@ computed from INS measurements during sweep $i$ are used to bring all points int
 
 We also experimented with approaches that do not rely on the absolute pose measurements for subsections of the sweep, such as interpolation using point timestamps or point indices (based on the order in which the points are returned), but these did not yield better results. A potential drawback of our method is that it disregards the localization noise, which could prove counterproductive if the GNSS receiver has low accuracy.
 
-Through this step we are effectively removing the need for sub-scan information, and creating a simpler data structure in which each scan is associated a single $\egoposet{}$ pose (from the first data frame), and the points in a sweep can be treated as a unified set.
+Through this step we are effectively removing the need for sub-scan information and creating a simpler data structure in which each scan is associated a single $\egoposet{}$ pose (from the first data frame), and the points in a sweep can be treated as a unified set.
 
 Without loss of generality, we transform the sequence of global poses
 $\left\{\posei{0}, \posei{1}, ...\right\}$
@@ -179,8 +181,8 @@ into the frame of the first pose, by multiplying each pose with  $\left(\posei{0
 
 \section{Solution architecture}
 
-At its core, the odometry and mapping solution that we propose requires
+At its core, the odometry and mapping solution that we propose requires minimal input: a sequence of (motion-compensated) point clouds captured by a moving LiDAR scanner, and a timestamp for each scan. If available, the output of a localization or INS sensor can be employed to provide absolute constraints, but this is not a strict requirement.
 
-
+Let $\mathfrak{P} = \left\{ P_0, P_1, ... \right\}$ represent the set of point clouds that we operate on, and $\mathfrak{T} = \left\{ \gtposei{0}, \gtposei{1}, ... \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\matx{T}_i = \gtposei{i}^{-1} \gtposei{i+1}$, the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the trajectory could be reconstructed by accumulating the computed displacement. Perhaps with the exception of some simulation environments, such an approach is actually not feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
 
 

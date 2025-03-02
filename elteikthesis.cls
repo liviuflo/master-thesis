@@ -322,12 +322,16 @@
 \newcommand{\egoposet}[1]{{}^W\pose_{{ego}_{#1}}}
 \newcommand{\egoposeti}[2]{{}^W\pose_{{#1},{#2}}}
 \newcommand{\posei}[1]{{}^W\pose_{#1}}
+\newcommand{\gtposei}[1]{\widehat{\pose}_{#1}}
 
 \newcommand{\varx}[1]{\sigma^2_{#1}}
 \newcommand{\rotmtx}[2]{\text{Rot}_{#1}(#2)}
 \newcommand{\adjoint}[2]{\text{Adj}\left(#1, #2\right)}
 
 \newcommand{\skewsym}[1]{\left[#1\right]_\times}
+
+\newcommand{\eg}{e.g., }
+\newcommand{\ie}{i.e., }
 
 
 % ------------------------------
