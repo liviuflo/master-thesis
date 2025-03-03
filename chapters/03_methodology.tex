@@ -71,9 +71,9 @@ Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in t
 		\matx{R} & \vecx{t} \\ \vecx{0} & 1
 	\end{bmatrix} =
 	\text{Translation}(x, y, z) \cdot
-	\rotmtx{y}{\phi} \cdot
+	\rotmtx{z}{\psi} \cdot
 	\rotmtx{x}{\theta} \cdot
-	\rotmtx{z}{\psi}
+	\rotmtx{y}{\phi}
 \end{equation}
 
 where $\text{Rot}_k(\alpha)$ is the transformation matrix corresponding to a rotation of $\alpha$ around axis $k$.
