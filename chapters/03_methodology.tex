@@ -185,7 +185,7 @@ At its core, the odometry and mapping solution that we propose requires minimal 
 
 Let $\mathfrak{P} = \left\{ P_0, P_1, \dots, P_n\right\}$ represent the set of point clouds that we operate on, with point coordinates $P_k = \left\{\vecx{p}_{k,i} \vert \vecx{p}_{k,i} \in \RR^3 \right\}$ expressed in the local frame, and $\widehat{\mathfrak{T}} = \left\{ \gtposei{0}, \gtposei{1}, \dots, \gtposei{n} \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\matx{T}_i = \gtposei{i}^{-1} \gtposei{i+1}$, \ie the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the complete trajectory could be reconstructed by accumulating the computed displacement. Unfortunately, with the exception of some simulation environments, such an approach is not actually feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
 
-The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose $\pose_k \in \SE{3}$ represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, transformed according to their respective pose:
+The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose $\pose_k \in \SE{3}$ represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, each transformed according to their respective pose:
 \begin{equation}
 	\notag
 	M\left(\mathfrak{T}, \mathfrak{P}\right) =
@@ -202,7 +202,16 @@ The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0,
 
 This uncovers two possible evaluation directions, which also constitute the high-level aims of our method. On one hand, the output trajectory should match the actual path of the system as accurately as possible. On the other, the final map should not hide or damage small details in the scene, to obtain a high-quality 3D reconstruction. Although not immediately obvious, these can result in conflicting requirements, but they anticipate an underlying optimization problem.
 
-The experimental process began with a simple odometry pipeline, adapted from the KISS-ICP \cite{vizzo2023ral} implementation.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.6\linewidth]{images/kiss-icp-architecture.jpg}
+	\caption[KISS ICP Architecture]{The KISS ICP pipeline.\\An incoming scan is motion-compensated using the displacement between the previous estimated poses, then it is downsampled and registered against the local map. The pose estimated by the ICP algorithm is added to the trajectory, and the adaptive threshold is updated by evaluating the accuracy of the motion estimation. This determines the ICP outlier removal threshold, improving the system's ability to react to unexpected motions.}
+	\label{fig:kiss-icp-architecture}
+\end{figure}
+
+The experimental process began with a simple framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, LiDAR scans are processed sequentially, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides up-to-date localization estimates.
+
+
 
 % sequential framework - advantages, need for pose at every step
 % explain registration equations
