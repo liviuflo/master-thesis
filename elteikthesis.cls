@@ -300,6 +300,7 @@
 \RequirePackage{amsmath}
 \RequirePackage{amsfonts}
 \DeclareMathAlphabet{\mathpzc}{OT1}{pzc}{m}{it}
+\RequirePackage{bm}
 % ------------------------------
 
 % Macros for Lie groups and algebras
@@ -334,6 +335,12 @@
 \newcommand{\ie}{i.e., }
 
 \newcommand{\RR}{{\mathbb{R}}}   % Real numbers
+
+\newcommand{\kfx}[1]{\overline{\vecx{x}}_{#1}}
+\newcommand{\kfP}[1]{\matx{P}_{#1}}
+
+\newcommand{\kfxpred}[1]{\widehat{\overline{\vecx{x}}}_{#1}}
+\newcommand{\kfPpred}[1]{\widehat{\matx{P}}_{#1}}
 
 
 
