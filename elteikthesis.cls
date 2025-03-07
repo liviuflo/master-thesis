@@ -311,6 +311,13 @@
 \newcommand{\SO}[1]{\LieGroup{SO}{#1}}
 \newcommand{\SE}[1]{\LieGroup{SE}{#1}}
 \newcommand{\so}[1]{\LieAlgebra{so}{#1}}
+\newcommand{\se}[1]{\LieAlgebra{se}{#1}}
+
+\newcommand{\ExpSO}[1]{\text{Exp}_\text{SO}\left({#1}\right)}
+\newcommand{\expmap}[1]{\text{exp}\left({#1}\right)}
+\newcommand{\Log}[1]{\text{Log}\left({#1}\right)}
+\newcommand{\LogSO}[1]{\text{Log}_\text{SO}\left({#1}\right)}
+\newcommand{\logmap}[1]{\text{log}\left({#1}\right)}
 
 \newcommand{\vecx}[1]{\mathbf{#1}}    % Bold vector
 \newcommand{\matx}[1]{\mathbf{#1}}    % Bold matrix

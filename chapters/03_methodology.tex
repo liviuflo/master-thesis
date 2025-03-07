@@ -2,7 +2,7 @@
 \label{ch:methodology}
 
 This chapter will address the core contributions of our project.
-We present the hardware involved in sensor fusion, describe the data acquisition procedure, then introduce our final solution, by detailing the research and implementation process, as well as design decisions that had to be made along the way.
+We present the hardware involved in \gls{sensorfusion}, describe the data acquisition procedure, then introduce our final solution, by detailing the research and implementation process, as well as design decisions that had to be made along the way.
 
 \section{Hardware}
 
@@ -201,6 +201,10 @@ The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0,
 
 This uncovers two possible evaluation directions, which also constitute the high-level aims of our method. On one hand, the output trajectory  $\mathfrak{T}$ should match the actual path of the system as accurately as possible. On the other, the final map $M\left(\mathfrak{T}, \mathfrak{P}\right)$ should not hide or damage small details in the scene, to obtain a high-quality 3D reconstruction. Although not immediately obvious, these can result in conflicting requirements, but they anticipate an underlying optimization problem.
 
+
+\subsection{Overview}
+
+The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, scans are processed sequentially, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides the best localization estimates at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffig{deviation-no-gps}, creating a distorted map.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.6\linewidth]{images/kiss-icp-architecture.jpg}
@@ -208,17 +212,27 @@ This uncovers two possible evaluation directions, which also constitute the high
 	\label{fig:kiss-icp-architecture}
 \end{figure}
 
-The experimental process began with a simple framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, LiDAR scans are processed sequentially, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides up-to-date localization estimates.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.45\linewidth]{images/deviation_30s.png}
+	\caption[Trajectory deviation from GPS]{When the GPS information is not used, the trajectory computed based on LiDAR data diverges. Here, after 300 scans (approx. 30 seconds), the last location is approx. 0.5m away from the corresponding GPS position.}
+	\label{fig:deviation-no-gps}
+\end{figure}
+
+Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was developed, it was additionally tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
+
+Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
+
 
 \subsection{Motion prediction}
 
 The first component that we analyse addresses the problem of predicting the next pose in the trajectory. Given the trajectory computed so far $\left\{\pose_0, \pose_1, \dots \pose_t \right\}$, we are looking for $\pose_{t+1}'$ that estimates the location and orientation of scan $P_{t+1}$ in the world frame.
 
-This influences two other elements of the framework: motion compensation (scan de-skewing) and point cloud registration. In the absence of IMU data, the displacement between consecutive scans can be interpolated to correct individual points. The registration uses this predicted pose as an initial guess, for faster convergence, as we will see in a later section.
+This influences two other elements of the framework: motion compensation and point cloud registration. In the absence of IMU data, the displacement between consecutive scans can be interpolated to correct individual points. Point cloud registration uses this predicted pose as an initial guess, for faster convergence, as we will see in a later section.
 
 If the scans are captured at small, equal intervals, as is usually the case for LiDAR sensors, the movement can be approximated by a constant velocity model. The displacement between the previous two scans is propagated using
 $\Delta \pose_{t}' \approx \Delta \pose_{t-1} = \pose_{t-1}^{-1}\pose_{t}$, which leads to
-$\pose_{t+1}' = \pose_{t} \Delta \pose_{t-1}$. In our case, the time steps are not necessarily equal, and we would like to utilize the GPS measurements, when available, so we experimented with a Kalman Filter for computing the location component of $\pose_{t+1}'$. The state $\bm{x}_k \sim \mathcal{N}(\kfx{k}, \kfP{k}) $ is formulated as:
+$\pose_{t+1}' = \pose_{t} \Delta \pose_{t-1}$. In our case, the time steps are not necessarily equal, and we would like to correct this pose estimate using the GPS measurements, when available, so we experimented with a Kalman Filter for computing the location component of $\pose_{t+1}'$. The state $\bm{x}_k \sim \mathcal{N}(\kfx{k}, \kfP{k}) $ is formulated as:
 \begin{align*}
 	\kfx{k} & = \left[x_k, y_k, z_k, {v_x}_k, {v_y}_k, {v_z}_k\right]^T                                                    \\
 	\kfP{k} & = \text{diag}\left(\varx{x_k}, \varx{y_k}, \varx{z_k}, \varx{{v_x}_k}, \varx{{v_y}_k}, \varx{{v_z}_k}\right)
@@ -237,17 +251,16 @@ $
 		\matx{I}_3 & \matx{I}_3 \Delta t \\
 		\matx{0}_3 & \matx{I}_3
 	\end{bmatrix}
-$ and $\Qdt$ is the estimated process noise, which scales with the time interval. In the update step, we compute the next mean and covariance using a measurement $\vecx{z}_k$, by applying a Kalman gain:
+$ and $\Qdt$ is the estimated process noise, which scales with the time interval. In the update step, we compute the new mean and covariance using a measurement $\bm{z}_k \sim \mathcal{N}(\vecx{z}_k, \matx{R})$, by applying a Kalman gain:
 \begin{align*}
 	\matx{K}  & = \kfPpred{k+1} \matx{H} \left(\matx{H} \kfPpred{k+1} \matx{H}^T + \matx{R}\right)^{-1} \\
 	\kfx{k+1} & = \kfxpred{k+1} + \matx{K} \left(\vecx{z}_k - \matx{H}\kfxpred{k} \right)               \\
 	\kfP{k+1} & = \left(\matx{I} - \matx{K} \matx{H}\right) \kfPpred{k+1}
 \end{align*}
 
-The $\vecx{z}_k$ consists of a location $\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]^T$ and velocity values $\frac{1}{\Delta t}\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]^T$, assuming linear displacement. The Jacobian with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose returned by the registration procedure.
+The $\vecx{z}_k$ vector consists of a location $\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]^T$ and velocity values $\frac{1}{\Delta t}\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]^T$, assuming linear displacement. The Jacobian $\matx{H}$ with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose computed after the registration procedure.
 
-% proved a sensible way of computing the next location when the time steps are not fixed, but it
-This motion prediction method suffers from several disadvantages which outweigh its benefits for our use case. Firstly, it does not address the rotation component of the poses. Some possible workarounds include copying the rotation from the previous pose and letting the registration component correct that (this has been observed to fail when a larger time gap occurs, especially for curved trajectories \reffig{reg-failure-rotation}), or using the rotation returned by the INS. Secondly, it introduces the need for reliable noise estimation, such that the model is reactive to unexpected acceleration, while filtering out measurement noise. Process noise covariance $\matx{Q}$ and the measurement input covariance $\matx{R}$ require approximations which are difficult to balance for a general solution.
+This type of motion prediction method suffers from several disadvantages which outweigh its benefits for our use case. Firstly, it does not address the rotation component of the poses. Some possible workarounds include copying the orientation from the previous pose and letting the registration component correct that --- this has been observed to fail when a larger time gap occurs, especially for curved trajectories \reffig{reg-failure-rotation} ---, using the rotation returned by the INS, or having a separate method for computing the new rotation. Secondly, it introduces the need for reliable noise estimation \reffig{motion-model-overshoot}, such that the model is reactive to unexpected movement, while filtering out measurement noise. Process noise covariance $\matx{Q(\Delta t)}$ and the measurement input covariance $\matx{R}$ require approximations which are difficult to balance for a general solution. Therefore, using the estimated uncertainty of the predicted pose in further computations would only propagate potential sources of error.
 
 % \begin{figure}[h]
 % 	\centering
@@ -255,15 +268,13 @@ This motion prediction method suffers from several disadvantages which outweigh 
 % 	\caption[Registration Failure Case (Rotation)]{Registration failure case.\\ Incorrectly estimating the rotation between scans (red and blue) can cause the registration to converge to an erroneous local minimum.}
 % 	\label{fig:reg-failure-rotation}
 % \end{figure}
-
-
 \begin{figure}
 	\centering
 	\subcaptionbox{Registration failure case, when the rotation between consecutive scans (red and blue) is estimated incorrectly. \label{fig:reg-failure-rotation}}{
 		\includegraphics[width=0.47\linewidth]{images/rotation.png}
 	}
 	\hspace{1pt}
-	\subcaptionbox{Because constant velocity is assumed, the motion guesses require several steps to re-adjust after a time jump. Trajectory built upwards.\label{fig:motion-model-overshoot}}{
+	\subcaptionbox{If the non-constant time intervals are ignored, the model overshoots when time gaps occur. Trajectory starts from bottom.\label{fig:motion-model-overshoot}}{
 		\includegraphics[width=0.47\linewidth]{images/motion-overshoot.png}
 	}
 	\caption[Motion model challenges]{Challenges of using a Kalman Filter motion model}
@@ -271,10 +282,36 @@ This motion prediction method suffers from several disadvantages which outweigh 
 \end{figure}
 
 
-% - need for covariance estimation
-% - additional logic for rotations
+The approach that we propose relies on the differential properties of the $\SE{3}$ manifold. For any $\matx{M} = \begin{bmatrix}
+		\matx{R} & \vecx{t} \\ \vecx{0}^T & 1
+	\end{bmatrix} \in \SE{3}$, there is a corresponding twist  $\widehat{\xi} = \begin{bmatrix}
+		\skewsym{\vecx{w}} & \vecx{v} \\
+		\vecx{0}^T         & 1
+	\end{bmatrix} \in \se{3}$ which can be computed through the logarithmic map
+$
+	\widehat{\xi} = \logmap{\matx{M}} := \begin{bmatrix}
+		\matx{V}^{-1}(\vecx{w}) \vecx{t} \\
+		\LogSO{\matx{R}}
+	\end{bmatrix}
+$,
+where
+$\matx{V}(\vecx{w}) = \matx{V}(\theta\vecx{u})  := \matx{I}_3 + \frac{1-\cos\theta}{\theta}\skewsym{\vecx{u}} + \frac{\theta-\cos\theta}{\theta}\skewsym{\vecx{u}}^2$. The inverse operation, the exponential map, is defined as
+$
+	\matx{M} = \expmap{\widehat{\xi}} := \begin{bmatrix}
+		\ExpSO{\vecx{w}} & \matx{V}(\vecx{w})\vecx{v} \\
+		\matx{0}         & 1
+	\end{bmatrix}
+$. $\LogSO{}$ and $\ExpSO{}$ are the logarithmic and exponential maps that convert between $\vecx{w} \in \RR^3$ and $\matx{R} \in \SO{3}$. All of this allows the introduction of an interpolation function, with a parameter $t \in \left[0, 1\right]$:
+\newcommand{\Mtx}[1]{\matx{M}_{#1}}
+\[
+	\varphi\left(\Mtx{1}, \Mtx{2}, \alpha\right) :=
+	\Mtx{1} \expmap{\alpha \cdot \logmap{\Mtx{1}^{-1} \Mtx{2}}}
+\]
+
+In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps. To achieve this, we
 
 
+%% diagram of initial architecture
 
 % mention gaps in the data
 % sequential framework - advantages, need for pose at every step
