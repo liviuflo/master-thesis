@@ -24,7 +24,17 @@ and $\so{3} = \left\{\what : \vecx{w} \in \RR^3 \right\}$ is the set of all such
 	\expmap{\what} =\Expmap{\wvec}= \matx{I}_3 + \frac{\what}{\wmod} \sin{\wmod} + \frac{\what^2}{\wmod^2}\left(1 - \cos{\wmod}\right)
 \]
 
-The inverse operations are $\text{log}:  \SO{3} \rightarrow \so{3}$ and $\text{Log} :\SO{3} \rightarrow \RR^3$, respectively.
+The inverse operations are $\text{log}:  \SO{3} \rightarrow \so{3}$ and $\text{Log} :\SO{3} \rightarrow \RR^3$, respectively. If $\what = \logmap{\matx{R}}$ and $\matx{R} \neq \matx{I}_3$, then:
+
+\[
+	\wmod = \cos^{-1}\left(\frac{\text{tr}(\matx{R}) - 1}{2}\right)
+	\text{ and }
+	\frac{\wvec}{\wmod} = \frac{1}{2\sin{\wmod}}\begin{bmatrix}
+		r_{32} - r_{23} \\ r_{13} - r_{31} \\ r_{21}-r_{12}
+	\end{bmatrix}
+\]
+and if $\matx{R} = \matx{I}_3$, $\wmod=0$.
+
 Furthermore, we consider the group of Euclidean transformations in 3D space (rotation and translation):
 \[
 	\SE{3}= \left\{
@@ -152,16 +162,13 @@ Because the sensor provides error estimates in the form of global one-sigma valu
 \[
 	\matx{\Sigma} = \text{diag}\left(\varx{x}, \varx{y}, \varx{z}, \varx{\phi}, \varx{\theta}, \varx{\psi}\right)
 \]
-
 and transform it using the adjoint map of the rotation component:
-
 \[
 	\matx{\Sigma}_{ego} =
 	\adjoint{\matx{R}}{\vecx{0}} \cdot
 	\matx{\Sigma} \cdot
 	\transpose{\adjoint{\matx{R}}{\vecx{0}}}
 \]
-
 where:
 \[
 	\adjoint{\matx{R}}{\vecx{t}} =
@@ -243,13 +250,13 @@ into the frame of the first pose, by multiplying each pose with  $\left(\posei{0
 
 At its core, the odometry and mapping solution that we propose requires minimal input: a sequence of point clouds captured by a moving LiDAR scanner, and a timestamp for each scan. If available, absolute localization/INS measurements can be used as additional input.
 
-Let $\mathfrak{P} = \left\{ P_0, P_1, \dots P_n\right\}$ represent the set of point clouds that we operate on, with point coordinates $P_k = \left\{\vecx{p}_{k,i} \vert \vecx{p}_{k,i} \in \RR^3 \right\}$ expressed in the local frame, $\mathfrak{s} = \left\{ s_0, s_1, \dots s_n\right\}$ the corresponding timestamps, and $\widehat{\mathfrak{T}} = \left\{ \gtposei{0}, \gtposei{1}, \dots \gtposei{n} \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\gtposei{i} = \gtposei{i}^{-1} \gtposei{i+1}$, \ie the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the complete trajectory could be reconstructed by accumulating the computed displacement. Unfortunately, with the exception of some simulation environments, such an approach is not actually feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
+Let $\mathfrak{P} = \left\{ P_0, P_1, \dots P_n\right\}$ represent the set of point clouds that we operate on, with point coordinates $P_k = \left\{\vecx{p}_{k,i} : \vecx{p}_{k,i} \in \RR^3 \right\}$ expressed in the local frame, $\mathfrak{s} = \left\{ s_0, s_1, \dots s_n\right\}$ the corresponding timestamps, and $\widehat{\mathfrak{T}} = \left\{ \gtposei{0}, \gtposei{1}, \dots \gtposei{n} \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\gtposei{i} = \gtposei{i}^{-1} \gtposei{i+1}$, \ie the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the complete trajectory could be reconstructed by accumulating the computed displacement. Unfortunately, with the exception of some simulation environments, such an approach is not actually feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
 
 The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose $\pose_k \in \SE{3}$ represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, each transformed according to their respective pose:
 \[
 	M\left(\mathfrak{T}, \mathfrak{P}\right) =
 	\left\{
-	\vecx{p}_{k,i}^* \Big|
+	\vecx{p}_{k,i}^* \in \RR^3:
 	\begin{bmatrix}
 		\vecx{p}_{k,i}^* \\ 1
 	\end{bmatrix} =
@@ -270,11 +277,7 @@ This uncovers two possible evaluation directions, which also constitute the high
 
 \subsection{Overview}
 
-The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, scans are processed sequentially, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides the best localization estimates at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffig{deviation-no-gps}, creating a distorted map.
-
-Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was developed, it was additionally tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
-
-Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
+The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, scans are processed one-by-one, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides a localization estimate at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffig{deviation-no-gps}, creating a distorted map.
 
 \begin{figure}[h]
 	\centering
@@ -282,6 +285,11 @@ Later on, we also considered addressing the pose estimation problem holistically
 	\caption[Trajectory deviation from GPS]{When the GPS information is not used, the trajectory computed based on LiDAR data diverges. Here, after 300 scans (approx. 30 seconds), the last location is approx. 0.5m away from the corresponding GPS position.}
 	\label{fig:deviation-no-gps}
 \end{figure}
+
+Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was evolving, it was tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
+
+Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
+
 
 \subsection{Reconciling motion prediction, GNSS and registration}
 Before discussing the components in detail, we would like to provide a general picture of the rationale behind combining the pose estimates that we operate on. We assume that for every scan $P_k$ we can compute three poses in the world frame, and aim to generate $\pose_k$ as a function of these:
@@ -293,11 +301,11 @@ Before discussing the components in detail, we would like to provide a general p
 
 Each of these serves a different purpose: using only $\pose_k^{\text{ICP}}$ would lead to a high-quality 3D map, while diverging from the actual locations; $\pose_k^{\text{GPS}}$ estimates the absolute position and orientation, but its accuracy varies depending on the environment; the $\pose_{k}'$ pose can help filter out noise in the GNSS data and smoothen the trajectory, but comes from a motion prediction mechanism that cannot operate in the absence of other sensors.
 
-In an initial trial, we observed what happens when the GPS pose is used in the initialization step of the registration algorithm, with the intuition that this could prevent trajectory divergence without significantly affecting map quality. However, this leads to an unwanted behavior. At first, the registration is not affected by the input pose, converging to the pure $\pose_k^{\text{ICP}}$. As the map grows, the divergence is not constrained, so it reaches the stage where a $\pose_k^{\text{GPS}}$ pose is a very poor initial guess for registration, which gets stuck in a local minimum. Depending on the displacement between scans and the nature of the 3D scenes, this can even happen after just a few scans.
+In an initial trial, we observed what happens when the GPS pose is used as the initial state of the registration algorithm, with the intuition that this could prevent trajectory divergence without significantly affecting map quality. In practice, this leads to an unwanted behavior. At first, the registration is not affected by the input pose, converging to the pure $\pose_k^{\text{ICP}}$. As the map grows, the divergence is not constrained, so it reaches a stage where the $\pose_k^{\text{GPS}}$ pose is a very poor initial guess for registration, which gets stuck in a local minimum. Depending on the displacement between scans and the nature of the 3D scenes, this can even happen after just a few scans.
 
-A subsequent idea was to treat $\pose_k^{\text{ICP}}$ as a local refinement for $\pose_k^{\text{GPS}}$, by applying an interpolation mechanism, as defined in Eq. \ref{eq:se3-interpolation}. If $\pose_k = \varphi\left(\pose_k^{\text{GPS}}, \pose_k^{\text{ICP}}, \alpha\right)$, the interpolation parameter $\alpha$ controls how much the registration pose is allowed to alter the GPS prior --- when $\alpha = 1$, we obtain the pure registration-based trajectory. This approach can prevent trajectory divergence while improving map quality, for small values of $\alpha$, \eg 0.1, but because $\alpha$ is fixed, it does not address the problem of varying GPS noise or faulty registration results.
+A subsequent idea was to treat $\pose_k^{\text{ICP}}$ as local refinement for $\pose_k^{\text{GPS}}$, by applying an interpolation, as defined in Eq. \ref{eq:se3-interpolation}. If $\pose_k = \varphi\left(\pose_k^{\text{GPS}}, \pose_k^{\text{ICP}}, \alpha\right)$, the interpolation parameter $\alpha$ controls how much the registration pose is allowed to alter the GPS prior --- when $\alpha = 1$, we obtain the pure registration-based trajectory. This approach can prevent trajectory divergence while improving map quality, for small values of $\alpha$ (\eg 0.1) but because $\alpha$ is fixed, it does not address the problem of varying GPS noise or faulty registration results.
 
-This can also be formulated as a generic optimization problem, by defining a distance measure between a pose $\pose_{}$ and an uncertain pose $\Mtx{}$, with covariance $\CovM$:
+This can also be formulated as a generic optimization problem, by defining a distance measure between an arbitrary pose $\pose_{}$ and an uncertain pose $\Mtx{}$, with covariance $\CovM$:
 
 \newcommand{\customres}{\Log{\Mtx{}^{-1} \pose_{}}}
 
