@@ -4,6 +4,78 @@
 This chapter will address the core contributions of our project.
 We present the hardware involved in \gls{sensorfusion}, describe the data acquisition procedure, then introduce our final solution, by detailing the research and implementation process, as well as design decisions that had to be made along the way.
 
+\section{Prerequisites}
+
+\newcommand{\wvec}{\vecx{w}}
+\newcommand{\what}{\widehat{\vecx{w}}}
+\newcommand{\wmod}{\left|\vecx{w}\right|}
+\newcommand{\xihat}{\widehat{\xi}}
+
+Let us first introduce the mathematical notions used throughout this work. The group of rotations in 3D space is $SO{3} = \left\{\matx{R} \in \RR^{3\times3} : \det{\matx{R}} = 1, \transpose{\matx{R}}\matx{R} = \matx{I}_3 \right\}$. For any vector $\wvec \in \RR^3$ we can define a \emph{skew-symmetric} matrix:
+\[ \what  = \skewsym{\wvec} =
+	\begin{bmatrix}
+		0    & -w_3 & w_2  \\
+		w_3  & 0    & -w_1 \\
+		-w_2 & w_1  & 0
+	\end{bmatrix}
+\]
+and $\so{3} = \left\{\what : \vecx{w} \in \RR^3 \right\}$ is the set of all such matrices. Using Rodrigues' formula \cite{murray2017mathematical}, the exponential maps $\text{exp}: \so{3} \rightarrow \SO{3}$ and $\text{Exp} :\RR^3 \rightarrow \SO{3}$ are defined:
+\[
+	\expmap{\what} =\Expmap{\wvec}= \matx{I}_3 + \frac{\what}{\wmod} \sin{\wmod} + \frac{\what^2}{\wmod^2}\left(1 - \cos{\wmod}\right)
+\]
+
+The inverse operations are $\text{log}:  \SO{3} \rightarrow \so{3}$ and $\text{Log} :\SO{3} \rightarrow \RR^3$, respectively.
+Furthermore, we consider the group of Euclidean transformations in 3D space (rotation and translation):
+\[
+	\SE{3}= \left\{
+	\Mtx{} \in \RR^{4\times4} : \Mtx{} =
+	\begin{bmatrix}
+		\matx{R} & \vecx{t} \\ \transpose{\vecx{0}} & 1
+	\end{bmatrix}, \matx{R} \in \SO{3}, \vecx{t} \in \RR^3
+	\right\}
+\]
+
+The corresponding tangent space is:
+
+\[
+	\se{3} = \left\{
+	\xihat \in \RR^{4\times4} : \xihat =
+	\widehat{\begin{bmatrix}
+			\vecx{v} \\ \wvec
+		\end{bmatrix}} = \begin{bmatrix}
+		\what                & \vecx{v} \\
+		\transpose{\vecx{0}} & 1
+	\end{bmatrix}, \wvec \in \RR^3, \vecx{v} \in \RR^3
+	\right\}
+\]
+
+The exponential maps $\text{exp}: \se{3} \rightarrow \SE{3}$ and $\text{Exp} :\RR^6 \rightarrow \SE{3}$ are defined as:
+\[
+	\expmap{\xihat} = \Expmap{\xi} = \begin{bmatrix}
+		\Expmap{\wvec}       & \matx{V}(\wvec)\vecx{v} \\
+		\transpose{\vecx{0}} & 1
+	\end{bmatrix}
+\]
+where:
+\[
+	\matx{V}(\vecx{w}) = \matx{V}(\theta\vecx{u})  = \matx{I}_3 + \frac{1-\cos\theta}{\theta}\widehat{\vecx{u}} + \frac{\theta-\sin\theta}{\theta}\widehat{\vecx{u}}^2
+\]
+
+The logarithmic map $\text{Log} :\SE{3} \rightarrow \RR^6$ is:
+\[
+	\xi = \Logmap{\begin{bmatrix}
+			\matx{R} & \vecx{t} \\ \transpose{\vecx{0}} & 1
+		\end{bmatrix}} = \begin{bmatrix}
+		\matx{V}^{-1}(\vecx{w}) \vecx{t} \\
+		\Logmap{\matx{R}}
+	\end{bmatrix}
+\]
+and we express $\text{log} :\SE{3} \rightarrow \se{3}$ as $\xihat = \logmap{\Mtx{}} = \widehat{\Logmap{\Mtx{}}}$. This allows introducing an interpolation function, with a parameter $\alpha \in \left[0, 1\right]$:
+\begin{equation}
+	\label{eq:se3-interpolation}
+	\varphi\left(\Mtx{1}, \Mtx{2}, \alpha\right) :=
+	\Mtx{1} \expmap{\alpha \cdot \logmap{\Mtx{1}^{-1} \Mtx{2}}}
+\end{equation}
 \section{Hardware}
 
 In this context, hardware refers to the set of sensors used for data collection, determined by the existing industrial setup. The data capturing system is controlled by an Nvidia Jetson board, which operates as a middle-man for time synchronisation between the sensors, and coordinates the various data streams. Even though the solution was designed such that it does not inherently rely on any particular device, the relationship between hardware capabilities, data quality and final output makes it crucial to understand the sensors involved in the process. Beyond the components described below, the setup includes three industrial grade ArkCam Basic+ wide angle cameras which provide a 1920x1080 RGB stream over Ethernet. These are not utilised within this project, but represent a noticeable motivation for future work directions.
@@ -67,9 +139,7 @@ Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in t
 
 \begin{equation}
 	\notag
-	\egoposet{} = \begin{bmatrix}
-		\matx{R} & \vecx{t} \\ \vecx{0} & 1
-	\end{bmatrix} =
+	\egoposet{} =
 	\text{Translation}(x, y, z) \cdot
 	\rotmtx{z}{\psi} \cdot
 	\rotmtx{x}{\theta} \cdot
@@ -77,39 +147,29 @@ Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in t
 \end{equation}
 
 where $\text{Rot}_k(\alpha)$ is the transformation matrix corresponding to a rotation of $\alpha$ around axis $k$.
-Because the sensor provides error estimates in the form of global one-sigma values $\left\{ \sigma_x, \sigma_y, \sigma_z, \sigma_\phi, \sigma_\theta, \sigma_\psi\right\}$, we construct the covariance matrix
+Because the sensor provides error estimates in the form of global one-sigma values $\left\{ \sigma_x, \sigma_y, \sigma_z, \sigma_\phi, \sigma_\theta, \sigma_\psi\right\}$, we construct the covariance matrix:
 
-\begin{equation}
-	\notag
+\[
 	\matx{\Sigma} = \text{diag}\left(\varx{x}, \varx{y}, \varx{z}, \varx{\phi}, \varx{\theta}, \varx{\psi}\right)
-\end{equation}
+\]
 
-and transform it using the adjoint map of the rotation component
+and transform it using the adjoint map of the rotation component:
 
-\begin{equation}
-	\notag
+\[
 	\matx{\Sigma}_{ego} =
 	\adjoint{\matx{R}}{\vecx{0}} \cdot
 	\matx{\Sigma} \cdot
-	\adjoint{\matx{R}}{\vecx{0}}^T
-\end{equation}
+	\transpose{\adjoint{\matx{R}}{\vecx{0}}}
+\]
 
-where
-\begin{equation}
-	\notag
+where:
+\[
 	\adjoint{\matx{R}}{\vecx{t}} =
 	\begin{bmatrix}
-		\matx{R}                   & \vecx{0} \\
+		\matx{R}                   & \vecx{0}_{3\times3} \\
 		\skewsym{\vecx{t}}\matx{R} & \matx{R}
 	\end{bmatrix}
-	\text{ and }
-	\skewsym{\vecx{t}} =
-	\begin{bmatrix}
-		0    & -t_3 & t_2  \\
-		t_3  & 0    & -t_1 \\
-		-t_2 & t_1  & 0
-	\end{bmatrix}
-\end{equation}
+\]
 
 A LiDAR range reading $r$, captured at azimuth $\alpha$ with an elevation angle of $\phi$, can be converted to a 3D location in the LiDAR frame:
 
@@ -237,12 +297,13 @@ In an initial trial, we observed what happens when the GPS pose is used in the i
 
 A subsequent idea was to treat $\pose_k^{\text{ICP}}$ as a local refinement for $\pose_k^{\text{GPS}}$, by applying an interpolation mechanism, as defined in Equation \ref{eq:se3-interpolation}. If $\pose_k = \varphi\left(\pose_k^{\text{GPS}}, \pose_k^{\text{ICP}}, \alpha\right)$, the interpolation parameter $\alpha$ controls how much the registration pose is allowed to alter the GPS prior --- when $\alpha = 1$, we obtain the pure registration-based trajectory. This approach can prevent trajectory divergence while improving map quality, for small values of $\alpha$, \eg 0.1, but because $\alpha$ is fixed, it does not address the problem of varying GPS noise or faulty registration results.
 
+This can also be formulated as a generic optimization problem, by defining a distance measure between a pose $\pose_{}$ and an uncertain pose $\Mtx{}$, with covariance $\CovM$:
 
+\newcommand{\customres}{\Log{\Mtx{}^{-1} \pose_{}}}
 
-%compute $\pose_k$ 
-% simple interpolation
-% optimization function
-This can also be formulated as an optimization problem, by defining
+\[
+	\text{d}\left(\pose_{}, \Mtx{}, \CovM\right) = \left(\customres\right)^T \cdot \CovM^{-1} \cdot \customres
+\]
 
 \subsection{Motion prediction}
 \label{subsec:motion-prediction}
@@ -304,36 +365,9 @@ This type of motion prediction method suffers from several disadvantages which o
 \end{figure}
 
 
-The approach that we propose relies on the differential properties of the $\SE{3}$ manifold. For any $\matx{M} = \begin{bmatrix}
-		\matx{R} & \vecx{t} \\ \vecx{0}^T & 1
-	\end{bmatrix} \in \SE{3}$, there is a corresponding twist  $\widehat{\xi} = \begin{bmatrix}
-		\skewsym{\vecx{w}} & \vecx{v} \\
-		\vecx{0}^T         & 1
-	\end{bmatrix} \in \se{3}$ which can be computed through the logarithmic map
-$
-	\widehat{\xi} = \logmap{\matx{M}} := \begin{bmatrix}
-		\matx{V}^{-1}(\vecx{w}) \vecx{t} \\
-		\LogSO{\matx{R}}
-	\end{bmatrix}
-$,
-where
-$\matx{V}(\vecx{w}) = \matx{V}(\theta\vecx{u})  := \matx{I}_3 + \frac{1-\cos\theta}{\theta}\skewsym{\vecx{u}} + \frac{\theta-\cos\theta}{\theta}\skewsym{\vecx{u}}^2$. The inverse operation, the exponential map, is defined as
-$
-	\matx{M} = \expmap{\widehat{\xi}} := \begin{bmatrix}
-		\ExpSO{\vecx{w}} & \matx{V}(\vecx{w})\vecx{v} \\
-		\matx{0}         & 1
-	\end{bmatrix}
-$. $\LogSO{}$ and $\ExpSO{}$ are the logarithmic and exponential maps that convert between $\vecx{w} \in \RR^3$ and $\matx{R} \in \SO{3}$. All of this allows the introduction of an interpolation function, with a parameter $t \in \left[0, 1\right]$:
-\newcommand{\Mtx}[1]{\matx{M}_{#1}}
-\begin{equation}
-	\label{eq:se3-interpolation}
-	\varphi\left(\Mtx{1}, \Mtx{2}, \alpha\right) :=
-	\Mtx{1} \expmap{\alpha \cdot \logmap{\Mtx{1}^{-1} \Mtx{2}}}
-\end{equation}
+The approach that we propose relies on the interpolation properties of the $\SE{3}$ manifold (Eq. \ref{eq:se3-interpolation}). In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$.
 
-
-In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$.
-
+%%% section on Prerequisites
 %% diagram of initial architecture
 
 % mention gaps in the data

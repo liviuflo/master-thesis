@@ -315,13 +315,19 @@
 
 \newcommand{\ExpSO}[1]{\text{Exp}_\text{SO}\left({#1}\right)}
 \newcommand{\expmap}[1]{\text{exp}\left({#1}\right)}
+\newcommand{\Expmap}[1]{\text{Exp}\left({#1}\right)}
 \newcommand{\Log}[1]{\text{Log}\left({#1}\right)}
 \newcommand{\LogSO}[1]{\text{Log}_\text{SO}\left({#1}\right)}
 \newcommand{\logmap}[1]{\text{log}\left({#1}\right)}
+\newcommand{\Logmap}[1]{\text{Log}\left({#1}\right)}
 
 \newcommand{\vecx}[1]{\mathbf{#1}}    % Bold vector
 \newcommand{\matx}[1]{\mathbf{#1}}    % Bold matrix
 \newcommand{\pose}{\matx{T}}
+\newcommand{\Mtx}[1]{\matx{M}_{#1}}
+\newcommand{\CovM}{\matx{\Sigma}_\matx{M}}
+
+\newcommand{\transpose}[1]{{#1}^\text{T}}
 
 \newcommand{\lidartxt}{\text{LiDAR}}
 \newcommand{\lidarframe}[1]{{}^\lidartxt#1}
