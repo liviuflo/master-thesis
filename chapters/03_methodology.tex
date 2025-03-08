@@ -308,10 +308,11 @@ A subsequent idea was to treat $\pose_k^{\text{ICP}}$ as local refinement for $\
 This can also be formulated as a generic optimization problem, by defining a distance measure between an arbitrary pose $\pose_{}$ and an uncertain pose $\Mtx{}$, with covariance $\CovM$:
 
 \newcommand{\customres}{\Log{\Mtx{}^{-1} \pose_{}}}
-
 \[
-	\text{d}\left(\pose_{}, \Mtx{}, \CovM\right) = \left(\customres\right)^T \cdot \CovM^{-1} \cdot \customres
+	\text{d}\left(\pose_{}, \Mtx{}, \CovM\right) = \transpose{\left(\customres\right)} \cdot \CovM^{-1} \cdot \customres
 \]
+
+
 
 \subsection{Motion prediction}
 \label{subsec:motion-prediction}
@@ -325,15 +326,15 @@ If the scans are captured at small, equal intervals, as is usually the case for 
 $\Delta \pose_{t}' \approx \Delta \pose_{t-1} = \pose_{t-1}^{-1}\pose_{t}$, which leads to
 $\pose_{t+1}' = \pose_{t} \Delta \pose_{t-1}$. In our case, the time steps are not necessarily equal, and we would like to correct this pose estimate using the GPS measurements, when available, so we experimented with a Kalman Filter for computing the location component of $\pose_{t+1}'$. The state $\bm{x}_k \sim \mathcal{N}(\kfx{k}, \kfP{k}) $ is formulated as:
 \begin{align*}
-	\kfx{k} & = \left[x_k, y_k, z_k, {v_x}_k, {v_y}_k, {v_z}_k\right]^T                                                    \\
+	\kfx{k} & = \transpose{\left[x_k, y_k, z_k, {v_x}_k, {v_y}_k, {v_z}_k\right]}                                          \\
 	\kfP{k} & = \text{diag}\left(\varx{x_k}, \varx{y_k}, \varx{z_k}, \varx{{v_x}_k}, \varx{{v_y}_k}, \varx{{v_z}_k}\right)
 \end{align*}
 Over a time step $\Delta t$, this changes according to a linear model:
 \newcommand{\Fdt}{\matx{F}(\Delta t)}
 \newcommand{\Qdt}{\matx{Q}(\Delta t)}
 \begin{align*}
-	\kfxpred{k+1} & =  \Fdt \cdot \kfx{k}                    \\
-	\kfPpred{k+1} & = \Fdt^T \cdot \kfP{k} \cdot \Fdt + \Qdt
+	\kfxpred{k+1} & =  \Fdt \cdot \kfx{k}                              \\
+	\kfPpred{k+1} & = \transpose{\Fdt} \cdot \kfP{k} \cdot \Fdt + \Qdt
 \end{align*}
 where
 $
@@ -344,12 +345,12 @@ $
 	\end{bmatrix}
 $ and $\Qdt$ is the estimated process noise, which scales with the time interval. In the update step, we compute the new mean and covariance using a measurement $\bm{z}_k \sim \mathcal{N}(\vecx{z}_k, \matx{R})$, by applying a Kalman gain:
 \begin{align*}
-	\matx{K}  & = \kfPpred{k+1} \matx{H} \left(\matx{H} \kfPpred{k+1} \matx{H}^T + \matx{R}\right)^{-1} \\
-	\kfx{k+1} & = \kfxpred{k+1} + \matx{K} \left(\vecx{z}_k - \matx{H}\kfxpred{k} \right)               \\
+	\matx{K}  & = \kfPpred{k+1} \matx{H} \left(\matx{H} \kfPpred{k+1} \transpose{\matx{H}} + \matx{R}\right)^{-1} \\
+	\kfx{k+1} & = \kfxpred{k+1} + \matx{K} \left(\vecx{z}_k - \matx{H}\kfxpred{k} \right)                         \\
 	\kfP{k+1} & = \left(\matx{I} - \matx{K} \matx{H}\right) \kfPpred{k+1}
 \end{align*}
 
-The $\vecx{z}_k$ vector consists of a location $\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]^T$ and velocity values $\frac{1}{\Delta t}\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]^T$, assuming linear displacement. The Jacobian $\matx{H}$ with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose computed after the registration procedure.
+The $\vecx{z}_k$ vector consists of a location $\transpose{\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]}$ and velocity values $\frac{1}{\Delta t}\transpose{\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]}$, assuming linear displacement. The Jacobian $\matx{H}$ with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose computed after the registration procedure.
 
 This type of motion prediction method suffers from several disadvantages which outweigh its benefits for our use case. Firstly, it does not address the rotation component of the poses. Some possible workarounds include copying the orientation from the previous pose and letting the registration component correct that --- this has been observed to fail when a larger time gap occurs, especially for curved trajectories \reffig{reg-failure-rotation} ---, using the rotation returned by the INS, or having a separate method for computing the new rotation. Secondly, it introduces the need for reliable noise estimation \reffig{motion-model-overshoot}, such that the model is reactive to unexpected movement, while filtering out measurement noise. Process noise covariance $\matx{Q(\Delta t)}$ and the measurement input covariance $\matx{R}$ require approximations which are difficult to balance for a general solution. Therefore, using the estimated uncertainty of the predicted pose in further computations would only propagate potential sources of error.
 
