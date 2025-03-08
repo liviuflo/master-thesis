@@ -25,7 +25,7 @@ The same device has been used for LiDAR odometry applications in the past \cite{
 
 Another component of the sensor stack is the Septentrio AsteRx SBi3 Pro+ GNSS/INS receiver \cite{Septentrio_AsteRx_SBi3_Pro+}, which provides global positioning and orientation data at a rate of 100Hz. Internally, this relies on two distinct mechanisms.
 
-The localization information comes from a dual antenna GNSS module compatible with several GNSS consellations (\eg \acrshort{gps}, \acrshort{glonass}, Galileo), to ensure optimal worldwide coverage. In standalone mode, the advertised typical accuracy is 1m, but the receiver also acts as an NTRIP (a protocol for differential GPS) client, gathering correction information, in order to achieve centimeter-level accuracy.
+The localization information comes from a dual antenna GNSS module compatible with several GNSS consellations (\eg \acrshort{gps}\footnote{Throughout this paper, GNSS and GPS are used interchangeably to refer to the global localization sensor, regardless of the underlying satellite system used during data collection.}, \acrshort{glonass}, Galileo), to ensure optimal worldwide coverage. In standalone mode, the advertised typical accuracy is 1m, but the receiver also acts as an NTRIP (a protocol for differential GPS) client, gathering correction information, in order to achieve centimeter-level accuracy.
 
 An \acrfull{imu} module records acceleration data and provides the remaining orientation angles (roll, pitch, yaw) to compute the complete pose, in 6 \acrfull{dof}. This is integrated with the absolute GNSS measurements using the patented FUSE+ technology \cite{Septentrio_FUSE_Sensor_Fusion}, resulting in an orientation error below  $\text{5-10}\degree$.
 
@@ -201,16 +201,20 @@ The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0,
 
 This uncovers two possible evaluation directions, which also constitute the high-level aims of our method. On one hand, the output trajectory  $\mathfrak{T}$ should match the actual path of the system as accurately as possible. On the other, the final map $M\left(\mathfrak{T}, \mathfrak{P}\right)$ should not hide or damage small details in the scene, to obtain a high-quality 3D reconstruction. Although not immediately obvious, these can result in conflicting requirements, but they anticipate an underlying optimization problem.
 
-
-\subsection{Overview}
-
-The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, scans are processed sequentially, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides the best localization estimates at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffig{deviation-no-gps}, creating a distorted map.
 \begin{figure}[h]
 	\centering
 	\includegraphics[width=0.6\linewidth]{images/kiss-icp-architecture.jpg}
 	\caption[KISS ICP Architecture]{The KISS ICP pipeline.\\An incoming scan is motion-compensated using the displacement between the previous estimated poses, then it is downsampled and registered against the local map. The pose estimated by the ICP algorithm is added to the trajectory, and the adaptive threshold is updated by evaluating the accuracy of the motion estimation. This determines the ICP outlier removal threshold, improving the system's ability to react to unexpected motions.}
 	\label{fig:kiss-icp-architecture}
 \end{figure}
+
+\subsection{Overview}
+
+The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, scans are processed sequentially, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides the best localization estimates at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffig{deviation-no-gps}, creating a distorted map.
+
+Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was developed, it was additionally tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
+
+Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
 
 \begin{figure}[h]
 	\centering
@@ -219,12 +223,30 @@ The final architecture is the result of a series of experiments. The process beg
 	\label{fig:deviation-no-gps}
 \end{figure}
 
-Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was developed, it was additionally tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
+\subsection{Reconciling motion prediction, GNSS and registration}
+Before discussing the components in detail, we would like to take a step back and provide a broader picture of the rationale behind combining the pose estimates that we operate on. We assume that for every scan $P_k$ we can compute three poses in the world frame, and aim to generate $\pose_k$ as a function of these:
+\begin{compactenum}
+	\item A registration-predicted pose $\pose_k^{\text{ICP}}$, from a point cloud registration method that optimizes map alignment between scans in the global frame.
+	\item An absolute localization pose $\pose_k^{\text{GPS}}$, generated by the INS sensor.
+	\item A motion-predicted pose $\pose_{k}'$, output by the algorithm described in section \ref{subsec:motion-prediction}.
+\end{compactenum}
 
-Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
+Each of these serves a different purpose: using only $\pose_k^{\text{ICP}}$ would lead to a high-quality 3D map, while diverging from the actual locations; $\pose_k^{\text{GPS}}$ estimates the absolute position and orientation, but its accuracy varies depending on the environment; the $\pose_{k}'$ pose can help filter out noise in the GNSS data and smoothen the trajectory, but comes from a motion prediction mechanism that cannot operate in the absence of other sensors.
 
+In an initial trial, we observed what happens when the GPS pose is used in the initialization step of the registration algorithm, with the intuition that this could prevent trajectory divergence without significantly affecting map quality. However, this leads to an unwanted behavior. At first, the registration is not affected by the input pose, converging to the pure $\pose_k^{\text{ICP}}$. As the map grows, the divergence is not constrained, so it reaches the stage where a $\pose_k^{\text{GPS}}$ pose is a very poor initial guess for registration, which gets stuck in a local minimum. Depending on the displacement between scans and the nature of the 3D scenes, this can even happen after just a few scans.
+
+A subsequent idea was to treat $\pose_k^{\text{ICP}}$ as a local refinement for $\pose_k^{\text{GPS}}$, by applying an interpolation mechanism, as defined in Equation \ref{eq:se3-interpolation}. If $\pose_k = \varphi\left(\pose_k^{\text{GPS}}, \pose_k^{\text{ICP}}, \alpha\right)$, the interpolation parameter $\alpha$ controls how much the registration pose is allowed to alter the GPS prior --- when $\alpha = 1$, we obtain the pure registration-based trajectory. This approach can prevent trajectory divergence while improving map quality, for small values of $\alpha$, \eg 0.1, but because $\alpha$ is fixed, it does not address the problem of varying GPS noise.
+
+
+
+%compute $\pose_k$ 
+% simple interpolation
+% optimization function
+This can also be formulated as an optimization problem, by defining
 
 \subsection{Motion prediction}
+\label{subsec:motion-prediction}
+
 
 The first component that we analyse addresses the problem of predicting the next pose in the trajectory. Given the trajectory computed so far $\left\{\pose_0, \pose_1, \dots \pose_t \right\}$, we are looking for $\pose_{t+1}'$ that estimates the location and orientation of scan $P_{t+1}$ in the world frame.
 
@@ -270,14 +292,14 @@ This type of motion prediction method suffers from several disadvantages which o
 % \end{figure}
 \begin{figure}
 	\centering
-	\subcaptionbox{Registration failure case, when the rotation between consecutive scans (red and blue) is estimated incorrectly. \label{fig:reg-failure-rotation}}{
+	\subcaptionbox{Registration failure case, when the rotation between consecutive scans (red and blue) is estimated incorrectly. The ICP algorithm converges to an erroneous local minimum. \label{fig:reg-failure-rotation}}{
 		\includegraphics[width=0.47\linewidth]{images/rotation.png}
 	}
 	\hspace{1pt}
-	\subcaptionbox{If the non-constant time intervals are ignored, the model overshoots when time gaps occur. Trajectory starts from bottom.\label{fig:motion-model-overshoot}}{
+	\subcaptionbox{If the motion model is too confident in its velocity estimate, or uneven time intervals are not handled correctly, the motion prediction will overshoot. Trajectory starts from bottom.\label{fig:motion-model-overshoot}}{
 		\includegraphics[width=0.47\linewidth]{images/motion-overshoot.png}
 	}
-	\caption[Motion model challenges]{Challenges of using a Kalman Filter motion model}
+	\caption[Motion model challenges]{Challenges of using a Kalman Filter motion model.}
 	\label{fig:motion-pred-trouble}
 \end{figure}
 
@@ -303,13 +325,14 @@ $
 	\end{bmatrix}
 $. $\LogSO{}$ and $\ExpSO{}$ are the logarithmic and exponential maps that convert between $\vecx{w} \in \RR^3$ and $\matx{R} \in \SO{3}$. All of this allows the introduction of an interpolation function, with a parameter $t \in \left[0, 1\right]$:
 \newcommand{\Mtx}[1]{\matx{M}_{#1}}
-\[
+\begin{equation}
+	\label{eq:se3-interpolation}
 	\varphi\left(\Mtx{1}, \Mtx{2}, \alpha\right) :=
 	\Mtx{1} \expmap{\alpha \cdot \logmap{\Mtx{1}^{-1} \Mtx{2}}}
-\]
+\end{equation}
+
 
 In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$.
-
 
 %% diagram of initial architecture
 
