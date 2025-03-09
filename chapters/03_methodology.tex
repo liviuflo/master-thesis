@@ -12,42 +12,40 @@ We present the hardware involved in \gls{sensorfusion}, describe the data acquis
 \newcommand{\xihat}{\widehat{\xi}}
 
 Let us first introduce the mathematical notions used throughout this work. The group of rotations in 3D space is $SO{3} = \left\{\matx{R} \in \RR^{3\times3} : \det{\matx{R}} = 1, \transpose{\matx{R}}\matx{R} = \matx{I}_3 \right\}$. For any vector $\wvec \in \RR^3$ we can define a \emph{skew-symmetric} matrix:
-\[ \what  = \skewsym{\wvec} =
+\begin{equation}
+	\what  = \skewsym{\wvec} =
 	\begin{bmatrix}
 		0    & -w_3 & w_2  \\
 		w_3  & 0    & -w_1 \\
 		-w_2 & w_1  & 0
 	\end{bmatrix}
-\]
+\end{equation}
 and $\so{3} = \left\{\what : \vecx{w} \in \RR^3 \right\}$ is the set of all such matrices. Using Rodrigues' formula \cite{murray2017mathematical}, the exponential maps $\text{exp}: \so{3} \rightarrow \SO{3}$ and $\text{Exp} :\RR^3 \rightarrow \SO{3}$ are defined:
-\[
-	\expmap{\what} =\Expmap{\wvec}= \matx{I}_3 + \frac{\what}{\wmod} \sin{\wmod} + \frac{\what^2}{\wmod^2}\left(1 - \cos{\wmod}\right)
-\]
-
+\begin{equation}
+	\expmap{\what} =\Expmap{\wvec}= \matx{I}_3 + \frac{\what}{\wmod} \sin{\wmod} + \frac{\what^2}{\wmod^2}\left(1 - \cos{\wmod}\right)\text{.}
+\end{equation}
 The inverse operations are $\text{log}:  \SO{3} \rightarrow \so{3}$ and $\text{Log} :\SO{3} \rightarrow \RR^3$, respectively. If $\what = \logmap{\matx{R}}$ and $\matx{R} \neq \matx{I}_3$, then:
-
-\[
+\begin{equation}
 	\wmod = \cos^{-1}\left(\frac{\text{tr}(\matx{R}) - 1}{2}\right)
 	\text{ and }
 	\frac{\wvec}{\wmod} = \frac{1}{2\sin{\wmod}}\begin{bmatrix}
 		r_{32} - r_{23} \\ r_{13} - r_{31} \\ r_{21}-r_{12}
 	\end{bmatrix}
-\]
+\end{equation}
 and if $\matx{R} = \matx{I}_3$, $\wmod=0$.
 
 Furthermore, we consider the group of Euclidean transformations in 3D space (rotation and translation):
-\[
+\begin{equation}
 	\SE{3}= \left\{
 	\Mtx{} \in \RR^{4\times4} : \Mtx{} =
 	\begin{bmatrix}
 		\matx{R} & \vecx{t} \\ \transpose{\vecx{0}} & 1
 	\end{bmatrix}, \matx{R} \in \SO{3}, \vecx{t} \in \RR^3
-	\right\}
-\]
+	\right\}\eqdot
+\end{equation}
 
 The corresponding tangent space is:
-
-\[
+\begin{equation}
 	\se{3} = \left\{
 	\xihat \in \RR^{4\times4} : \xihat =
 	\widehat{\begin{bmatrix}
@@ -56,35 +54,36 @@ The corresponding tangent space is:
 		\what                & \vecx{v} \\
 		\transpose{\vecx{0}} & 1
 	\end{bmatrix}, \wvec \in \RR^3, \vecx{v} \in \RR^3
-	\right\}
-\]
+	\right\}\eqdot
+\end{equation}
 
 The exponential maps $\text{exp}: \se{3} \rightarrow \SE{3}$ and $\text{Exp} :\RR^6 \rightarrow \SE{3}$ are defined as:
-\[
+\begin{equation}
 	\expmap{\xihat} = \Expmap{\xi} = \begin{bmatrix}
 		\Expmap{\wvec}       & \matx{V}(\wvec)\vecx{v} \\
 		\transpose{\vecx{0}} & 1
-	\end{bmatrix}
-\]
+	\end{bmatrix}\comma
+\end{equation}
 where:
-\[
-	\matx{V}(\vecx{w}) = \matx{V}(\theta\vecx{u})  = \matx{I}_3 + \frac{1-\cos\theta}{\theta}\widehat{\vecx{u}} + \frac{\theta-\sin\theta}{\theta}\widehat{\vecx{u}}^2
-\]
+\begin{equation}
+	\matx{V}(\vecx{w}) = \matx{V}(\theta\vecx{u})  = \matx{I}_3 + \frac{1-\cos\theta}{\theta}\widehat{\vecx{u}} + \frac{\theta-\sin\theta}{\theta}\widehat{\vecx{u}}^2\eqdot
+\end{equation}
 
 The logarithmic map $\text{Log} :\SE{3} \rightarrow \RR^6$ is:
-\[
+\begin{equation}
 	\xi = \Logmap{\begin{bmatrix}
 			\matx{R} & \vecx{t} \\ \transpose{\vecx{0}} & 1
 		\end{bmatrix}} = \begin{bmatrix}
 		\matx{V}^{-1}(\vecx{w}) \vecx{t} \\
 		\Logmap{\matx{R}}
-	\end{bmatrix}
-\]
+	\end{bmatrix}\comma
+\end{equation}
 and we express $\text{log} :\SE{3} \rightarrow \se{3}$ as $\xihat = \logmap{\Mtx{}} = \widehat{\Logmap{\Mtx{}}}$. This allows introducing an interpolation function, with a parameter $\alpha \in \left[0, 1\right]$:
 \begin{equation}
 	\label{eq:se3-interpolation}
 	\varphi\left(\Mtx{1}, \Mtx{2}, \alpha\right) :=
 	\Mtx{1} \expmap{\alpha \cdot \logmap{\Mtx{1}^{-1} \Mtx{2}}}
+	\eqdot
 \end{equation}
 \section{Hardware}
 
@@ -148,62 +147,63 @@ The next pre-processing step consists of dividing the sequence of data frames su
 Every INS reading undergoes a map projection, to obtain $x,y,z$ coordinates in the East-North-Up frame. We consider the frame of the GNSS receiver as the $ego$ coordinate system. The roll $\phi$, pitch $\theta$ and yaw angles $\psi$ determine the absolute orientation, so we compute a global pose $\egoposet{} \in \SE{3}$ as:
 
 \begin{equation}
-	\notag
 	\egoposet{} =
 	\text{Translation}(x, y, z) \cdot
 	\rotmtx{z}{\psi} \cdot
 	\rotmtx{x}{\theta} \cdot
-	\rotmtx{y}{\phi}
+	\rotmtx{y}{\phi}\comma
 \end{equation}
-
 where $\text{Rot}_k(\alpha)$ is the transformation matrix corresponding to a rotation of $\alpha$ around axis $k$.
 Because the sensor provides error estimates in the form of global one-sigma values $\left\{ \sigma_x, \sigma_y, \sigma_z, \sigma_\phi, \sigma_\theta, \sigma_\psi\right\}$, we construct the covariance matrix:
-
-\[
+\begin{equation}
 	\matx{\Sigma} = \text{diag}\left(\varx{x}, \varx{y}, \varx{z}, \varx{\phi}, \varx{\theta}, \varx{\psi}\right)
-\]
+\end{equation}
 and transform it using the adjoint map of the rotation component:
-\[
+\begin{equation}
 	\matx{\Sigma}_{ego} =
 	\adjoint{\matx{R}}{\vecx{0}} \cdot
 	\matx{\Sigma} \cdot
 	\transpose{\adjoint{\matx{R}}{\vecx{0}}}
-\]
+	\comma
+\end{equation}
 where:
-\[
+\begin{equation}
 	\adjoint{\matx{R}}{\vecx{t}} =
 	\begin{bmatrix}
 		\matx{R}                   & \vecx{0}_{3\times3} \\
 		\skewsym{\vecx{t}}\matx{R} & \matx{R}
-	\end{bmatrix}
-\]
+	\end{bmatrix}\eqdot
+\end{equation}
 
 A LiDAR range reading $r$, captured at azimuth $\alpha$ with an elevation angle of $\phi$, can be converted to a 3D location in the LiDAR frame:
 
 \begin{equation}
-	\notag
 	\lidarframe{\vecx{p}}= \begin{bmatrix}
 		p_x \\ p_y \\ p_z
 	\end{bmatrix}=\begin{bmatrix}
 		r \cos{\phi} \sin{\alpha} \\ r \cos{\phi} \cos{\alpha} \\ r \sin{\phi}
-	\end{bmatrix}
+	\end{bmatrix}\eqdot
 \end{equation}
-
 
 If $\lidartoego$ is the pose of the LiDAR in the ego frame (from extrinsic calibration), we can compute the location of a point in the ego frame:
 
 \begin{equation}
-	\notag
 	\begin{bmatrix}
 		{}^{ego}\vecx{p}_\lidartxt \\ 1
 	\end{bmatrix}
 	= \lidartoego \begin{bmatrix}
 		\lidarframe{\vecx{p}} \\ 1
-	\end{bmatrix}
+	\end{bmatrix}\eqdot
 \end{equation}
 
 
-\begin{figure}
+
+\subsection{Motion compensation}
+\label{subsec:motion-compensation}
+
+At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
+
+\begin{figure}[h]
 	\centering
 	\subcaptionbox{Before: an artificial duplicate surface \label{fig:motion-comp-pre}}{
 		\includegraphics[width=0.45\linewidth]{images/motion-comp-pre.png}
@@ -216,15 +216,11 @@ If $\lidartoego$ is the pose of the LiDAR in the ego frame (from extrinsic calib
 	\label{fig:motion-comp}
 \end{figure}
 
-At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
-
-
 This open research problem \cite{motion-comp-mcdermott} is commonly addressed by estimating the sensor pose change during a sweep \cite{vicp,vizzo2023ral}, and IMU integration proves satisfactory \cite{deskewing2020}, given the short time interval involved. In our case, the ego poses
 $\left\{\egoposeti{i}{0}, \egoposeti{i}{1}, \dots, \egoposeti{i}{m}\right\}$
 computed from INS measurements during sweep $i$ are used to bring all points into the frame defined by $\egoposeti{i}{0}$. A point $^{i,k}\vecx{p}$ belongs to data frame $k$, so it will be replaced by:
 
-\[
-	\notag
+\begin{equation}
 	\begin{bmatrix}
 		^{i,0}\vecx{p} \\ 1
 	\end{bmatrix}
@@ -233,7 +229,8 @@ computed from INS measurements during sweep $i$ are used to bring all points int
 	\end{bmatrix}  = \left({\egoposeti{i}{0}}\right)^{-1} \egoposeti{i}{k} \begin{bmatrix}
 		{}^{i,k}\vecx{p} \\ 1
 	\end{bmatrix}
-\]
+	\eqdot
+\end{equation}
 
 We also experimented with approaches that do not rely on the absolute pose measurements for subsections of the sweep, such as interpolation using point timestamps or point indices (based on the order in which the points are returned), but these did not yield better results. A potential drawback of our method is that it disregards the localization noise, which could prove counterproductive if the GNSS receiver has low accuracy.
 
@@ -253,7 +250,7 @@ At its core, the odometry and mapping solution that we propose requires minimal 
 Let $\mathfrak{P} = \left\{ P_0, P_1, \dots P_n\right\}$ represent the set of point clouds that we operate on, with point coordinates $P_k = \left\{\vecx{p}_{k,i} : \vecx{p}_{k,i} \in \RR^3 \right\}$ expressed in the local frame, $\mathfrak{s} = \left\{ s_0, s_1, \dots s_n\right\}$ the corresponding timestamps, and $\widehat{\mathfrak{T}} = \left\{ \gtposei{0}, \gtposei{1}, \dots \gtposei{n} \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\gtposei{i} = \gtposei{i}^{-1} \gtposei{i+1}$, \ie the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the complete trajectory could be reconstructed by accumulating the computed displacement. Unfortunately, with the exception of some simulation environments, such an approach is not actually feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
 
 The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose $\pose_k \in \SE{3}$ represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, each transformed according to their respective pose:
-\[
+\begin{equation}
 	M\left(\mathfrak{T}, \mathfrak{P}\right) =
 	\left\{
 	\vecx{p}_{k,i}^* \in \RR^3:
@@ -263,8 +260,8 @@ The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0,
 	\pose_k \begin{bmatrix}
 		\vecx{p}_{k,i} \\ 1
 	\end{bmatrix}, \vecx{p}_{k,i} \in P_k, k \in \overline{0 \dots n}
-	\right\}
-\]
+	\right\}\eqdot
+\end{equation}
 
 This uncovers two possible evaluation directions, which also constitute the high-level aims of our method. On one hand, the output trajectory  $\mathfrak{T}$ should match the actual path of the system as accurately as possible. On the other, the final map $M\left(\mathfrak{T}, \mathfrak{P}\right)$ should not hide or damage small details in the scene, to obtain a high-quality 3D reconstruction. Although not immediately obvious, these can result in conflicting requirements, but they anticipate an underlying optimization problem.
 
@@ -319,11 +316,12 @@ This can also be formulated as a generic optimization problem. First, we define 
 \newcommand{\xireg}{\xi_{\text{Reg}}}
 \newcommand{\xiicp}{\xi_{\text{ICP}}}
 \newcommand{\xigps}{\xi_{\text{GPS}}}
-\[
+\begin{equation}
 	\dfunc{\pose, \Mtx{}, \CovM} = \transpose{\left(\customres\right)} \cdot \CovM^{-1} \cdot \customres
-\]
+	\comma
+\end{equation}
 where $\CovM$ is the covariance of $\Mtx{}$, and $\customres \in \RR^6$ is the twist vector residual. What we aim to optimize is:
-\[
+\begin{equation}
 	% \pose_k = \underset{\matx{T}}{\text{argmin}}
 	\mathcal{J}\left(\pose\right) =
 	% \left[
@@ -331,62 +329,60 @@ where $\CovM$ is the covariance of $\Mtx{}$, and $\customres \in \RR^6$ is the t
 	\beta_{GPS} \dfunc{\pose, \tkgps, \covgps} +
 	\beta_{Motion} \dfunc{\pose, \pose_k', \matx{\Sigma}'}
 	% \right]
-\]
+	\comma
+\end{equation}
 where $\costreg$ defines the cost associated with the registration, and the $\beta$ weights balance the influence of the components. If we assume that $\pose_k'$ already includes the information from $\tkgps$, the middle term can be discarded.
 
 In one of our experiments, we expressed $\costreg$ as the L2 norm of the vector of point cloud registration residuals. In classical ICP, these are pairwise distances between points that have been matched using a nearest-neighbor search. However, optimizing this jointly with the other pose-based residuals (from $\mathcal{D}$) leads to numerical complications, because of the different scales of the errors involved. We note that this could represent a future research direction.
 
 Another approach is to see $\tkicp$ as the optimal registration pose and have
-\[
+\begin{equation}
 	\costreg(\pose) = \dfunc{\pose, \tkicp, \covicp}
-\] where $\covicp$ is a covariance matrix that estimates the registration uncertainty --- this is explained in more detail in Section \ref{subsec:registration}. The cost function becomes a weighted sum of $\mathcal{D}$ functions. We aim to compute the analytical solution of:
+	\comma
+\end{equation}
+where $\covicp$ is a covariance matrix that estimates the registration uncertainty --- this is explained in more detail in Section \ref{subsec:registration}. The cost function becomes a weighted sum of $\mathcal{D}$ functions. We aim to compute the analytical solution of:
 \newcommand{\betaM}{\beta_{\Mtx{}}}
 \begin{equation}
 	\label{eq:costfn}
 	%  \in \left\{\tkicp, \tkgps, \pose'\right\}
 	\pose_k = \underset{\matx{T}}{\text{argmin}}
 	\sum_{\Mtx{}} \betaM\dfunc{\pose, \Mtx{}, \CovM}
+	\eqdot
 \end{equation}
-
-% \[
-% 	\pose_k = \underset{\matx{T}}{\text{argmin}}
-% 	\left[
-% 		\betareg \dfunc{\pose, \tkicp, \covicp} + \betagps \dfunc{\pose, \tkgps, \covgps}
-% 		\right]
-% \]
 First, we linearize $\pose$ around a constant pose $\pose_0$, with a perturbation $\xi \in \RR^6$:
 \begin{equation}
 	\label{eq:poselin}
 	\pose = \pose_0 \Expmap{\xi}
+	\comma
 \end{equation}
-
 which leads to:
-\begin{align*}
+\begin{align}
 	\customres
 	 & = \Log{\left(\pose_0 \Expmap{\xi}\right)^{-1} \Mtx{}} \\
 	 & =	\Log{\Expmap{-\xi}\pose_0^{-1} \Mtx{}}               \\
 	 & =  \Log{\pose_0^{-1} \Mtx{}} - \xi
-\end{align*}
-
-\newcommand{\customreslin}{\left(\Log{\pose_0^{-1} \Mtx{}} - \xi\right)}
-\newcommand{\customreslinnoxi}{\Log{\pose_0^{-1} \Mtx{}}}
+	\eqdot
+\end{align}
 
 Next, we can derivate the $\mathcal{D}$ function with respect to $\xi$:
-\begin{align*}
+\begin{align}
 	\frac{\delta \mathcal{D}}{\delta\xi}
 	 & = \frac{\delta \left(\transpose{\customreslin} \CovM^{-1} \customreslin\right)}{\delta\xi} \\
 	 & = -\CovM^{-1}\customreslin
-\end{align*}
+	\eqdot
+\end{align}
 
 The minimum of the cost function in Eq. \ref{eq:costfn} occurs when:
-\[
+\begin{equation}
 	\sum_{\Mtx{}} -\betaM \CovM^{-1}\customreslin = 0
-\]
+	\comma
+\end{equation}
 which, when solved for $\xi$, gives:
-\[
+\begin{equation}
 	\xi = \left(\sum_{\Mtx{}}\betaM\CovM^{-1}\right)^{-1}
 	\sum_{\Mtx{}}\betaM\CovM^{-1}\customreslinnoxi
-\]
+	\eqdot
+\end{equation}
 
 The final pose is reconstructed using the relationship in Eq. \ref{eq:poselin}. We note that this procedure actually computes a weighted combination of poses --- both the covariance matrices and the $\betaM$ terms act as weights. For small covariance values, the contribution of the associated pose $\Mtx{}$ is large, because $\CovM$ is inverted. In practice, we found it convenient to only take into account the covariances, in order to avoid having to adjust the additional $\betaM$ terms, which scale the weights linearly.
 
@@ -412,17 +408,18 @@ This influences two other elements of the framework: motion compensation and poi
 If the scans are captured at small, equal intervals, as is usually the case for LiDAR sensors, the movement can be approximated by a constant velocity model. The displacement between the previous two scans is propagated using
 $\Delta \pose_{t}' \approx \Delta \pose_{t-1} = \pose_{t-1}^{-1}\pose_{t}$, which leads to
 $\pose_{t+1}' = \pose_{t} \Delta \pose_{t-1}$. In our case, the time steps are not necessarily equal, and we would like to correct this pose estimate using the GPS measurements, when available, so we experimented with a Kalman Filter for computing the location component of $\pose_{t+1}'$. The state $\bm{x}_k \sim \mathcal{N}(\kfx{k}, \kfP{k}) $ is formulated as:
-\begin{align*}
-	\kfx{k} & = \transpose{\left[x_k, y_k, z_k, {v_x}_k, {v_y}_k, {v_z}_k\right]}                                          \\
-	\kfP{k} & = \text{diag}\left(\varx{x_k}, \varx{y_k}, \varx{z_k}, \varx{{v_x}_k}, \varx{{v_y}_k}, \varx{{v_z}_k}\right)
-\end{align*}
+\begin{align}
+	\kfx{k} & = \transpose{\left[x_k, y_k, z_k, {v_x}_k, {v_y}_k, {v_z}_k\right]}                                                \\
+	\kfP{k} & = \text{diag}\left(\varx{x_k}, \varx{y_k}, \varx{z_k}, \varx{{v_x}_k}, \varx{{v_y}_k}, \varx{{v_z}_k}\right)\eqdot
+\end{align}
 Over a time step $\Delta t$, this changes according to a linear model:
 \newcommand{\Fdt}{\matx{F}(\Delta t)}
 \newcommand{\Qdt}{\matx{Q}(\Delta t)}
-\begin{align*}
+\begin{align}
 	\kfxpred{k+1} & =  \Fdt \cdot \kfx{k}                              \\
 	\kfPpred{k+1} & = \transpose{\Fdt} \cdot \kfP{k} \cdot \Fdt + \Qdt
-\end{align*}
+	\comma
+\end{align}
 where
 $
 	\Fdt =
@@ -431,13 +428,14 @@ $
 		\matx{0}_3 & \matx{I}_3
 	\end{bmatrix}
 $ and $\Qdt$ is the estimated process noise, which scales with the time interval. In the update step, we compute the new mean and covariance using a measurement $\bm{z}_k \sim \mathcal{N}(\vecx{z}_k, \matx{R})$, by applying a Kalman gain:
-\begin{align*}
+\begin{align}
 	\matx{K}  & = \kfPpred{k+1} \matx{H} \left(\matx{H} \kfPpred{k+1} \transpose{\matx{H}} + \matx{R}\right)^{-1} \\
 	\kfx{k+1} & = \kfxpred{k+1} + \matx{K} \left(\vecx{z}_k - \matx{H}\kfxpred{k} \right)                         \\
 	\kfP{k+1} & = \left(\matx{I} - \matx{K} \matx{H}\right) \kfPpred{k+1}
-\end{align*}
+	\eqdot
+\end{align}
 
-The $\vecx{z}_k$ vector consists of a location $\transpose{\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]}$ and velocity values $\frac{1}{\Delta t}\transpose{\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]}$, assuming linear displacement. The Jacobian $\matx{H}$ with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose computed after the registration procedure.
+The $\vecx{z}_k$ vector consists of a location $\transpose{\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]}$ and velocity values $\frac{1}{\Delta t}\transpose{\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]}$, assuming linear displacement. The Jacobian $\matx{H}$ with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose computed by the registration procedure.
 
 This type of motion prediction method suffers from several disadvantages which outweigh its benefits for our use case. Firstly, it does not address the rotation component of the poses. Some possible workarounds include copying the orientation from the previous pose and letting the registration component correct that --- this has been observed to fail when a larger time gap occurs, especially for curved trajectories \reffig{reg-failure-rotation} ---, using the rotation returned by the INS, or having a separate method for computing the new rotation. Secondly, it introduces the need for reliable noise estimation \reffig{motion-model-overshoot}, such that the model is reactive to unexpected movement, while filtering out measurement noise. Process noise covariance $\matx{Q(\Delta t)}$ and the measurement input covariance $\matx{R}$ require approximations which are difficult to balance for a general solution. Therefore, using the estimated uncertainty of the predicted pose in further computations would only propagate potential sources of error.
 
@@ -461,13 +459,73 @@ This type of motion prediction method suffers from several disadvantages which o
 \end{figure}
 
 
-The approach that we propose relies on the interpolation properties of the $\SE{3}$ manifold (Eq. \ref{eq:se3-interpolation}). In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$.
+The approach that we propose relies on the interpolation properties of the $\SE{3}$ manifold (Eq. \ref{eq:se3-interpolation}). In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$. For the scenarios that we have tested on, this provides a very good approximation of the correct displacement, which can be further refined using the information in the point cloud.
 
 \subsection{Point Cloud Registration}
 \label{subsec:registration}
 
+The LiDAR sensor perceives the environment in a digital, discrete way, and outputs a set of 3D coordinates in the local frame. In a static scene, or after accurate motion compensation (Section \ref{subsec:motion-compensation}), this represents a high-quality 3D snapshot of the environment from the current viewpoint. The mechanical design of the sensor introduces some particularities in the data \reffig{pcd-effects}, but the measurement accuracy is excellent. As described earlier, applying a noise-resilient registration algorithm between consecutive scans constitutes a sensible odometry estimate.
+
+\begin{figure}
+	\centering
+	\subcaptionbox{The circular pattern on the ground section is typical for rotating LiDARs. Point density decreases with distance and incidence angle.}{
+		\includegraphics[width=0.47\linewidth]{images/pcd-circles.png}
+	}
+	\hfill
+	\subcaptionbox{Laser rays cannot penetrate opaque surfaces. This results in a ``shadow'' effect --- no points are generated for objects that are occluded from the sensor viewpoint.}{
+		\includegraphics[width=0.48\linewidth]{images/pcd-shadows.png}
+	}
+	\caption[Particularities of LiDAR output]{Particularities of LiDAR output.}
+	\label{fig:pcd-effects}
+\end{figure}
+
+\subsubsection{The ICP algorithm}
+
+A baseline for \emph{fine} registration methods, Iterative Closest Point (\refalg{alg:pseudocode-icp}) is naturally applicable to our scenario, albeit with some modifications. As opposed to the \emph{coarse} registration problem, where the aim is to find a rough alignment between arbitrary point clouds, we can exploit the motion prediction and/or the GPS readings as prior information about their global pose.
+
+\newcommand{\distth}{d_\text{max}}
+\newcommand{\iterth}{i_\text{max}}
+\newcommand{\tguess}{\matx{T}_\text{init}}
+\begin{algorithm}
+	\caption[Pseudocode of the basic ICP algorithm.]{Pseudocode of the basic ICP algorithm.}
+	\label{alg:pseudocode-icp}
+
+	\textbf{Input:}
+	\begin{compactitem}
+		\item $P, Q$: two point clouds, in local coordinate frames
+		\item $\tguess$: initial transformation guess between $P$ and $Q$
+		\item $\distth$: upper distance threshold for point neighbor search
+		\item $\iterth$: upper iteration threshold for the algorithm
+	\end{compactitem}
+	\textbf{Output:}
+	\begin{compactitem}
+		\item $\pose$: registration pose between $P$ and $Q$
+	\end{compactitem}
+	\textbf{\underline{Funct}} ICP($P, Q, \tguess, \distth, \iterth$)
+	\begin{algorithmic}[1] % number every line
+		\State Set $\pose \leftarrow \tguess, P' \leftarrow \pose P$
+		\For{$i=1, \dots, \iterth$}
+		\State Compute nearest-neighbor correspondences between $P'$ and $Q$
+		\State Discard correspondences where $\normtwo{p' - q} > \distth$
+		\State Compute $\pose' \leftarrow  \underset{\pose}{\text{argmin}} \sum_{p', q}\normtwo{\pose p' - q}$
+		\State $P' \leftarrow \pose'P'$ \Comment{Update the point cloud}
+		\State $\pose \leftarrow \pose'\pose$ \Comment{Update the transformation estimate}
+		\EndFor
+		\State \textbf{return} $\pose$
+	\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{Point Cloud Filtering}
+
+% voxelization
+% fpfh
+% finding keypoints/landmarks
+% entropy filtering
+
 \subsection{Graph Optimization}
 \label{subsec:graph-optimization}
+
+\section{Implementation details}
 
 %% diagram of initial architecture
 

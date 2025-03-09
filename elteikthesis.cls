@@ -303,6 +303,9 @@
 \RequirePackage{bm}
 % ------------------------------
 
+\newcommand{\comma}{\text{,}}
+\newcommand{\eqdot}{\text{.}}
+
 % Macros for Lie groups and algebras
 \newcommand{\LieGroup}[2]{\operatorname{#1}\left(#2\right)}
 \newcommand{\LieAlgebra}[2]{\mathfrak{#1}\left(#2\right)}
@@ -344,8 +347,15 @@
 
 \newcommand{\skewsym}[1]{\left[#1\right]_\times}
 
+\newcommand{\customreslin}{\left(\Log{\pose_0^{-1} \Mtx{}} - \xi\right)}
+\newcommand{\customreslinnoxi}{\Log{\pose_0^{-1} \Mtx{}}}
+
+\newcommand{\normtwo}[1]{\left|\left|{#1}\right|\right|_2}
+
 \newcommand{\eg}{e.g., }
 \newcommand{\ie}{i.e., }
+
+\newcommand{\refalg}[1]{Algorithm \ref{#1}}
 
 \newcommand{\RR}{{\mathbb{R}}}   % Real numbers
 
