@@ -480,14 +480,23 @@ The LiDAR sensor perceives the environment in a digital, discrete way, and outpu
 \end{figure}
 
 \subsubsection{The ICP algorithm}
-
-A baseline for \emph{fine} registration methods, Iterative Closest Point (\refalg{alg:pseudocode-icp}) is naturally applicable to our scenario, albeit with some modifications. As opposed to the \emph{coarse} registration problem, where the aim is to find a rough alignment between arbitrary point clouds, we can exploit the motion prediction and/or the GPS readings as prior information about their global pose.
+\newcommand{\pointp}{\vecx{p}}
+\newcommand{\pointq}{\vecx{q}}
+\newcommand{\matR}{\matx{R}}
+\newcommand{\vect}{\vecx{t}}
+\newcommand{\normalq}{\vecx{n}_{q}}
+\newcommand{\covp}{\matx{C}_{p}}
+\newcommand{\covq}{\matx{C}_{q}}
+\newcommand{\distxpq}[1]{d_{#1}(\pointp, \pointq)}
+\newcommand{\distpq}{\matR\pointp + \vect - \pointq}
+\newcommand{\distpqi}{\matR\pointp_i + \vect - \pointq_i}
+A baseline for \emph{fine} registration methods, Iterative Closest Point (\refalg{alg:pseudocode-icp}) is naturally applicable to our scenario, albeit with some modifications. As opposed to \emph{coarse} registration, where the aim is to find a rough alignment between arbitrary point clouds, we can exploit the motion prediction and/or the GPS readings as prior information about their global pose.
 
 \newcommand{\distth}{d_\text{max}}
 \newcommand{\iterth}{i_\text{max}}
 \newcommand{\tguess}{\matx{T}_\text{init}}
 \begin{algorithm}
-	\caption[Pseudocode of the basic ICP algorithm.]{Pseudocode of the basic ICP algorithm.}
+	\caption[Pseudocode of the point-to-point ICP algorithm.]{Pseudocode of the point-to-point ICP algorithm.}
 	\label{alg:pseudocode-icp}
 
 	\textbf{Input:}
@@ -503,17 +512,98 @@ A baseline for \emph{fine} registration methods, Iterative Closest Point (\refal
 	\end{compactitem}
 	\textbf{\underline{Funct}} ICP($P, Q, \tguess, \distth, \iterth$)
 	\begin{algorithmic}[1] % number every line
-		\State Set $\pose \leftarrow \tguess, P' \leftarrow \pose P$
+		\State $\pose \leftarrow \tguess$
+		\State $P' \leftarrow P$ transformed with $\pose$
 		\For{$i=1, \dots, \iterth$}
 		\State Compute nearest-neighbor correspondences between $P'$ and $Q$
 		\State Discard correspondences where $\normtwo{p' - q} > \distth$
-		\State Compute $\pose' \leftarrow  \underset{\pose}{\text{argmin}} \sum_{p', q}\normtwo{\pose p' - q}$
-		\State $P' \leftarrow \pose'P'$ \Comment{Update the point cloud}
+		\State Compute $\pose' \leftarrow  \underset{\pose}{\text{argmin}} \sum_{p', q}\normtwo{\pose \begin{bmatrix}
+					p' \\1
+				\end{bmatrix}  - \begin{bmatrix}q \\ 1\end{bmatrix}}$
 		\State $\pose \leftarrow \pose'\pose$ \Comment{Update the transformation estimate}
+		\State $P' \leftarrow P'$ transformed with $\pose'$ \Comment{Update the point cloud}
 		\EndFor
 		\State \textbf{return} $\pose$
 	\end{algorithmic}
 \end{algorithm}
+
+At every iteration step, the algorithm generates a set of correspondence hypotheses --- a heuristic approximation of true correspondences --- by finding the closest point from $Q$ to each point in $P'$. The assumption is that the alignment of the two point clouds is improved by minimizing the distance associated with each correspondence. Depending on how the distance metric is defined, the algorithm can focus on different characteristics of the point clouds.
+
+The simplest formulation uses a point-to-point distance metric.
+Given a transformation estimate $\pose = \left(\matR, \vect\right)$, we have:
+
+\begin{equation}
+	\distxpq{1} = \normtwo{\distpq}
+	\eqdot
+\end{equation}
+This is a computationally-efficient approach, but is more sensitive to noise and outliers compared to the alternatives, and it does not take into account any geometrical features of the point clouds. To improve this, a point-to-plane metric \cite{chen1991pointtoplane} can be used, which considers the unit surface normal $\normalq$ computed at $\pointq$:
+
+\begin{equation}
+	\distxpq{2} = \left(\transpose{\normalq}\left(\distpq\right)\right)^2
+	\eqdot
+\end{equation}
+Because $d_{2}(\pointp, \pointq)$ is null when $\pointp$ lies on the plane defined by $\pointq$ and $\normalq$, this approach improves surface registration, but will struggle in unstructured environments where the normals cannot be reliably estimated. In general, this is achieved by considering the neighborhood of each point in $Q$, fitting a plane to it, and computing its normal.
+
+In a more general formulation, the local surface properties are captured by the covariance matrices $\covp, \covq$ computed at $\pointp$ and $\pointq$ respectively. The resulting distance metric \cite{segal2009generalized} is:
+
+\begin{equation}
+	\distxpq{3} =
+	\transpose{\left(\distpq\right)}
+	\left(
+	\matR \covp \transpose{\matR} + \covq
+	\right)^{-1}
+	\left(\distpq\right)
+	\eqdot
+\end{equation}
+
+All of the above can constitute the residual terms when computing the optimal transformation using a Least-Squares solver. To improve noise robustness, several additional techniques are employed. We prevent the creation of correspondences beyond a given distance threshold, to avoid introducing incorrect point pairs. Using a small threshold, however, causes the algorithm to converge to a local minimum, as it is unable to correct for larger displacements (\eg when the initial transformation guess is far from the optimum). Inspired by \emph{Trimmed ICP} \cite{trimmedicp}, we sort correspondences by distance and discard those that are above the 70th percentile, under the assumption that the majority of pairs will provide sufficient information for a satisfactory alignment.
+
+Moreover, we apply the Geman-McClure function \reffig{robust-residual} on the point-to-point distance metric, like in \cite{vizzo2023ral}, which diminishes the influence of large residuals during minimization. For a residual $r$, this is defined as:
+\begin{equation}
+	\rho(r) = \frac{r^2/2}{\kappa + r^2}
+	\comma
+\end{equation}
+where $\kappa$ is a custom scaling factor, set to 0.11 in our experiments.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.5\linewidth]{images/robust-fn.png}
+	\caption[Robust residual function]{Applying the Geman-McClure function ($\kappa=0.11$) to the correspondence residuals modifies their relative contribution during least-squares optimization, potentially improving convergence.}
+	\label{fig:robust-residual}
+\end{figure}
+
+\newcommand{\residuali}{\vecx{r}_{i}}
+\newcommand{\residualjac}{\matx{J}_{\residuali}}
+We use the point-to-point distance metric, so the optimization problem becomes:
+
+\begin{equation}
+	\pose = \underset{\pose}{\text{argmin}} \sum_{i}
+	\rho \left(\normtwo{\distpqi} \right)
+	\comma
+\end{equation}
+which can be solved using the Gauss-Newton algorithm. We parametrize $\pose$ as a twist vector $\xi \in \RR^6 $, and we linearize around $\matx{I}_4$, to obtain $\pose \approx \matx{I}_4 + \xihat$. The Jacobian of the residual $\residuali =\distpqi$ with respect to $\xi$ is:
+
+\begin{equation}
+	\residualjac = \begin{bmatrix}
+		\matx{I}_3 & -\widehat{\vecx{t}}
+	\end{bmatrix} \in \RR^{3\times6}
+	\comma
+\end{equation}
+and each correspondence is associated a weight, according to the robust kernel:
+
+\begin{equation}
+	w(\residuali)=\frac{\kappa^2}{(\kappa + \normtwo{\residuali}^2)^2}
+\end{equation}
+The resulting normal equation is:
+\begin{equation}
+	\sum_{i} w(\residuali)\transpose{\residualjac}\residualjac\xi =
+	\sum_{i} w(\residuali)\transpose{\residualjac}\residuali
+	\comma
+\end{equation}
+which can be rewritten as a conventional matrix equation $	\matx{A}\xi = \vecx{b}$. This can be solved in several ways, but we selected the Cholesky factorization method, thanks to its numerical stability. The wanted transformation is then retrieved as $\pose = \Expmap{\xi}$.
+
+
+
 
 \subsubsection{Point Cloud Filtering}
 
