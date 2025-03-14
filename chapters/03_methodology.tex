@@ -601,7 +601,24 @@ which can be rewritten as a conventional matrix equation $	\matx{A}\xi = \vecx{b
 
 We have also experimented with approaches for removing points that could skew registration results, such as those originating from regions occupied by trees or bushes. These regions are not necessarily sparse, so filtering based on the distance to the nearest neighbor or a related statistical measure was not very effective.
 
-A promising method was based on the formulation described in \cite{adolfsson2021coral}, which computes a per-point entropy measure using the covariance of its neighborhood. A low entropy value indicates a structured, well-formed region (\eg points on a planar surface), while high entropy is usually associated with noisy regions.
+A promising method was based on the formulation described in \cite{adolfsson2021coral}, which computes a per-point entropy measure using the covariance of its neighborhood.
+A low entropy value indicates a structured, well-formed region (\eg points on a planar surface), while high entropy is usually associated with noisy regions. \reffig{sub-entr-view}
+The size of the neighborhood, defined as a radius around each point, was set to 0.3m.
+Filtering discards points with entropy above a certain percentile, to avoid a fixed threshold that would not be able to adjust to variable scene features. \reffig{sub-entr-log}
+
+\begin{figure}
+	\centering
+	\subcaptionbox{Entropy values in a scene with plenty of vegetation. Red - high entropy, green - low entropy. For covariance estimation, the neighborhood radius is 0.3m. \label{fig:sub-entr-view}}{
+		\includegraphics[width=0.47\linewidth]{images/entropy-scan.png}
+	}
+	\hfill
+	\subcaptionbox{Per-scan entropy across a section of the dataset. Entropy values vary depending on the scene features, making it difficult to find a satisfactory global threshold.\label{fig:sub-entr-log}}{
+		\includegraphics[width=0.48\linewidth]{images/entropy-log.png}
+	}
+	\caption[Filtering using entropy]{Point Cloud entropy analysis.}
+	\label{fig:entropy-analysis}
+\end{figure}
+
 % voxelization
 % fpfh
 % finding keypoints/landmarks
