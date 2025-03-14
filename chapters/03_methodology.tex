@@ -599,12 +599,13 @@ which can be rewritten as a conventional matrix equation $	\matx{A}\xi = \vecx{b
 
 \subsubsection{Point Cloud Filtering}
 
-We have also experimented with approaches for removing points that could skew registration results, such as those originating from regions occupied by trees or bushes. These regions are not necessarily sparse, so filtering based on the distance to the nearest neighbor or a related statistical measure was not very effective.
+We have also experimented with approaches that decrease the size of the point clouds used for registration. This is desirable because it reduces processing time and has the potential to remove points that skew registration results, such as those originating from regions occupied by trees or bushes. These regions usually not sparse, so filtering based on the distance to the nearest neighbor or a related statistical measure was not very effective.
+Similarly, random downsampling is not effective, because it does not address the noise issues.
 
 A promising method was based on the formulation described in \cite{adolfsson2021coral}, which computes a per-point entropy measure using the covariance of its neighborhood.
 A low entropy value indicates a structured, well-formed region (\eg points on a planar surface), while high entropy is usually associated with noisy regions. \reffig{sub-entr-view}
 The size of the neighborhood, defined as a radius around each point, was set to 0.3m.
-Filtering discards points with entropy above a certain percentile, to avoid a fixed threshold that would not be able to adjust to variable scene features. \reffig{sub-entr-log}
+Filtering discards points with entropy above a certain percentile, to avoid a fixed threshold that would not be able to adjust to variable scene features. \reffig{sub-entr-log} Unfortunately, this is computationally expensive and does not visibly improve registration results.
 
 \begin{figure}
 	\centering
@@ -619,10 +620,19 @@ Filtering discards points with entropy above a certain percentile, to avoid a fi
 	\label{fig:entropy-analysis}
 \end{figure}
 
-% voxelization
-% fpfh
-% finding keypoints/landmarks
-% entropy filtering
+More advanced techniques involve finding points or structures that can be identified in multiple scans (also referred to as \emph{landmarks}, in the SLAM paradigm), either through feature extraction \cite{fpfh} or 3D segmentation, but this introduces a map representation that is not really applicable to our use case.
+
+We employ a voxelization mechanism similar to \cite{vizzo2023ral}, to balance computation time and noise robustness. The 3D space is divided into equal-size cells and the first point in each cell is kept. The voxel size controls the resolution of the filtered point cloud, and should be smaller than the distance threshold used for correspondence generation, to avoid degenerate scenarios.
+
+\subsubsection{Summary}
+
+Following multiple experiments, we arrived at a procedure that can account for poor initialization and scene noise, while ensuring high-quality alignment between the current scan and the existing map. This is a two-step process, mimicking a coarse-to-fine registration procedure. Let $M, S$ be the map and current scan point clouds, respectively, and $v(P, \alpha)$ a voxelization function that downsamples point cloud $P$ using voxel size $\alpha$ (in meters). First, we perform robust point-to-point ICP between $v(S, 0.2)$ and $v(M, 0.4)$, using the motion prediction pose for initialization. The correspondence set is trimmed at the 70th percentile, and the number of iterations in the ICP procedure is not constrained, but we halt when the norm of the estimated $\xi$ is below a small threshold ($10^{-4}$).
+
+The resulting pose is used to intialize a dense registration stage. $v(S, 0.1)$ is aligned with $v(M, 0.1)$ using Generalized ICP, for at most 100 iterations. In both cases, we use a distance threshold of 0.5m, to account for corrections even in sparser areas of the point cloud (\eg at the edges).
+
+
+
+\subsection{Map Handling}
 
 \subsection{Graph Optimization}
 \label{subsec:graph-optimization}
