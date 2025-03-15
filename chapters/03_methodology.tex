@@ -681,6 +681,13 @@ In contrast with Section \ref{subsec:reconciling}, this addresses the entire set
 
 The generic formulation of the registration pose residual $\vecx{r}_{ij}^{\text{ICP}}$ allows for a modification that improves overall map quality. At time step $k$, after aligning the current scan $P_k$ to the existing local map built from scans $\left\{P_{k-5}, \dots P_{k-1}\right\}$, we create two odometry factors, for $\left(\pose_{k-1},\pose_k\right)$ and $\left(\pose_{k-2},\pose_k\right)$. The latter is motivated by the early observation that a registration-only trajectory yields a high-quality 3D map, so we use an odometry factor to enforce the registration result not only between consecutive poses.
 
+\begin{figure}
+	\centering
+	\includegraphics[width=0.6\linewidth]{images/graph.jpg}
+	\caption[Factor Graph Structure]{The factor graph structure.\\If a GPS reading is available, a unary factor is created. The displacement predicted with point cloud registration (ICP) is used to create binary factors between consecutive poses, like a classical odometry factor. To achieve higher map quality, we also add ``skip connections'' based on the registration result.}
+	\label{fig:factor-graph}
+\end{figure}
+
 
 %% registration covariance estimation
 
