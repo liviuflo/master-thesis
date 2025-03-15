@@ -627,6 +627,18 @@ More advanced techniques involve finding points or structures that can be identi
 
 We employ a voxelization mechanism similar to \cite{vizzo2023ral}, to balance computation time and noise robustness. The 3D space is divided into equal-size cells and the first point in each cell is kept. The voxel size controls the resolution of the filtered point cloud, and should be smaller than the distance threshold used for correspondence generation, to avoid degenerate scenarios.
 
+\subsubsection{Estimating Registration Covariance}
+\newcommand{\degrad}[1]{\text{rad}(#1)}
+A particular challenge is raised by the need to estimate the covariance of the pose obtained as the registration result. This serves as a confidence measure for the optimization framework, where the residuals are scaled with the inverse of $\covicp \in \RR^{6 \times 6}$.
+Brossard et al. \cite{Brossard_2020} provided an in-depth analysis of this problem. Previous works have computed covariance based on the Jacobian involved in the correspondence distance minimization \cite{covarianceicp2} or by employing a Kalman Filter that is updated for each point, using the mean squared correspondence distances as a measurement noise estimate \cite{covarianceicp}.
+
+We propose a heuristic approach based on the \acrfull{rmse} $e$ of the inlier correspondences in the registration result --- those for which the distance is below the provided threshold. Assuming that a perfect alignment corresponds to a covariance $\covicp^{*}$ with $\sigma_{x, y, z} = 0.01$ and $\sigma_{\phi, \theta, \psi} = 2\degree$,
+we compute a factor:
+\begin{equation}
+	r = 1 + \text{max}\left(0, \frac{e-e_{\text{min}}}{\sigma_e}\right)
+\end{equation}
+and set $\covicp = r \cdot \covicp^{*}$. Here, $\sigma_e$ represents the standard deviation of the RMSE values computed so far, so $r$ is an indicator of how accurate the current registration is, relative to $e_{\text{min}}$, the smallest RMSE observed up to that point. We note that RMSE can sometimes be misleading (\eg when registration reaches a local minimum), but it provides a reasonable estimate of alignment quality in this context.
+
 \subsubsection{Summary}
 
 Following multiple experiments, we arrived at a procedure that can account for poor initialization and scene noise, while ensuring high-quality alignment between the current scan and the existing map. This is a two-step process, mimicking a coarse-to-fine registration procedure. Let $M, S$ be the map and current scan point clouds, respectively, and $v(P, \alpha)$ a voxelization function that downsamples point cloud $P$ using voxel size $\alpha$ (in meters). First, we perform robust point-to-point ICP between $v(S, 0.2)$ and $v(M, 0.4)$, using the motion prediction pose for initialization. The correspondence set is trimmed at the 70th percentile, and the number of iterations in the ICP procedure is not constrained, but we halt when the norm of the estimated $\xi$ is below a small threshold ($10^{-4}$).
@@ -641,6 +653,13 @@ One drawback is that it hinders the implementation of a loop-closure mechanism, 
 
 \subsection{Graph Optimization}
 \label{subsec:graph-optimization}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=0.6\linewidth]{images/graph.jpg}
+	\caption[Factor Graph Structure]{The factor graph structure.\\If a GPS reading is available, a unary factor is created. The displacement predicted with point cloud registration (ICP) is used to create binary factors between consecutive poses, like a classical odometry factor. To achieve higher map quality, we also add ``skip connections'' based on the registration result.}
+	\label{fig:factor-graph}
+\end{figure}
 
 As stated earlier, we also experimented with solutions that employ factor graph optimization, thanks to its natural affinity to the SLAM problem. A factor graph \cite{dellaert2012factor} is a bipartite graph where nodes represent either:
 \begin{compactitem}
@@ -680,21 +699,6 @@ $ (note the similarity with Eq. \ref{eq:mah-distance}), we can formulate the joi
 In contrast with Section \ref{subsec:reconciling}, this addresses the entire set of pose estimates, which is essential if trajectory corrections are to be applied retroactively and not just for the current pose.
 
 The generic formulation of the registration pose residual $\vecx{r}_{ij}^{\text{ICP}}$ allows for a modification that improves overall map quality. At time step $k$, after aligning the current scan $P_k$ to the existing local map built from scans $\left\{P_{k-5}, \dots P_{k-1}\right\}$, we create two odometry factors, for $\left(\pose_{k-1},\pose_k\right)$ and $\left(\pose_{k-2},\pose_k\right)$. The latter is motivated by the early observation that a registration-only trajectory yields a high-quality 3D map, so we use an odometry factor to enforce the registration result not only between consecutive poses.
-
-\begin{figure}
-	\centering
-	\includegraphics[width=0.6\linewidth]{images/graph.jpg}
-	\caption[Factor Graph Structure]{The factor graph structure.\\If a GPS reading is available, a unary factor is created. The displacement predicted with point cloud registration (ICP) is used to create binary factors between consecutive poses, like a classical odometry factor. To achieve higher map quality, we also add ``skip connections'' based on the registration result.}
-	\label{fig:factor-graph}
-\end{figure}
-
-
-%% registration covariance estimation
-
-%% diagram of graph poses and factors
-
-
-
 
 
 
