@@ -289,6 +289,7 @@ Later on, we also considered addressing the pose estimation problem holistically
 
 
 \subsection{Reconciling motion prediction, GNSS and registration}
+\label{subsec:reconciling}
 Before discussing the components in detail, we would like to provide a general picture of the rationale behind combining the pose estimates that we operate on. We assume that for every scan $P_k$ we can compute three poses in the world frame, and aim to generate $\pose_k$ as a function of these:
 \newcommand{\tkicp}{\pose_k^{\text{ICP}}}
 \newcommand{\tkgps}{\pose_k^{\text{GPS}}}
@@ -317,6 +318,7 @@ This can also be formulated as a generic optimization problem. First, we define 
 \newcommand{\xiicp}{\xi_{\text{ICP}}}
 \newcommand{\xigps}{\xi_{\text{GPS}}}
 \begin{equation}
+	\label{eq:mah-distance}
 	\dfunc{\pose, \Mtx{}, \CovM} = \transpose{\left(\customres\right)} \cdot \CovM^{-1} \cdot \customres
 	\comma
 \end{equation}
@@ -572,7 +574,7 @@ Moreover, we apply the Geman-McClure function \reffig{robust-residual} on the po
 where $\kappa$ is a custom scaling factor, set to 0.11 in our experiments. The optimization problem becomes:
 
 \begin{equation}
-	\pose = \underset{\pose}{\text{argmin}} \sum_{i}
+	\pose^* = \underset{\pose}{\text{argmin}} \sum_{i}
 	\rho \left(\normtwo{\distpqi} \right)
 	\comma
 \end{equation}
@@ -588,6 +590,7 @@ and each correspondence is associated a weight, according to the robust kernel:
 
 \begin{equation}
 	w(\residuali)=\frac{\kappa^2}{(\kappa + \normtwo{\residuali}^2)^2}
+	\eqdot
 \end{equation}
 The resulting normal equation is:
 \begin{equation}
@@ -599,13 +602,13 @@ which can be rewritten as a conventional matrix equation $	\matx{A}\xi = \vecx{b
 
 \subsubsection{Point Cloud Filtering}
 
-We have also experimented with approaches that decrease the size of the point clouds used for registration. This is desirable because it reduces processing time and has the potential to remove points that skew registration results, such as those originating from regions occupied by trees or bushes. These regions usually not sparse, so filtering based on the distance to the nearest neighbor or a related statistical measure was not very effective.
+We have also experimented with approaches that decrease the size of the point clouds used for registration. This is desirable because it reduces processing time and has the potential to remove points that skew registration results, such as those originating from regions occupied by trees or bushes. These regions are usually not sparse, so filtering based on the distance to the nearest neighbor or a related statistical measure was not very effective.
 Similarly, random downsampling is not effective, because it does not address the noise issues.
 
 A promising method was based on the formulation described in \cite{adolfsson2021coral}, which computes a per-point entropy measure using the covariance of its neighborhood.
 A low entropy value indicates a structured, well-formed region (\eg points on a planar surface), while high entropy is usually associated with noisy regions. \reffig{sub-entr-view}
 The size of the neighborhood, defined as a radius around each point, was set to 0.3m.
-Filtering discards points with entropy above a certain percentile, to avoid a fixed threshold that would not be able to adjust to variable scene features. \reffig{sub-entr-log} Unfortunately, this is computationally expensive and does not visibly improve registration results.
+Filtering discards points with entropy above a certain percentile, to avoid setting a fixed threshold that would not be able to adjust to variable scene features. \reffig{sub-entr-log} Unfortunately, this is computationally expensive and does not visibly improve registration results.
 
 \begin{figure}
 	\centering
@@ -628,14 +631,65 @@ We employ a voxelization mechanism similar to \cite{vizzo2023ral}, to balance co
 
 Following multiple experiments, we arrived at a procedure that can account for poor initialization and scene noise, while ensuring high-quality alignment between the current scan and the existing map. This is a two-step process, mimicking a coarse-to-fine registration procedure. Let $M, S$ be the map and current scan point clouds, respectively, and $v(P, \alpha)$ a voxelization function that downsamples point cloud $P$ using voxel size $\alpha$ (in meters). First, we perform robust point-to-point ICP between $v(S, 0.2)$ and $v(M, 0.4)$, using the motion prediction pose for initialization. The correspondence set is trimmed at the 70th percentile, and the number of iterations in the ICP procedure is not constrained, but we halt when the norm of the estimated $\xi$ is below a small threshold ($10^{-4}$).
 
-The resulting pose is used to intialize a dense registration stage. $v(S, 0.1)$ is aligned with $v(M, 0.1)$ using Generalized ICP, for at most 100 iterations. In both cases, we use a distance threshold of 0.5m, to account for corrections even in sparser areas of the point cloud (\eg at the edges).
-
-
+The resulting pose is used to intialize a dense registration stage: $v(S, 0.1)$ is aligned with $v(M, 0.1)$ using Generalized ICP, for at most 100 iterations. In both cases, we use a distance threshold of 0.5m, to account for corrections even in sparser areas of the point cloud (\eg at the edges).
 
 \subsection{Map Handling}
 
+Because high-quality mapping constitutes one of our primary goals, having a sensible map representation is a key component of the solution. We treat the map as a point cloud in the global frame, built by concatenating a sequence of scans after transforming them with the best pose estimate computed so far. We do not attempt to store a set of key points, as this does not contribute to fine registration, but we constrain the size of the point cloud that we operate on using a sliding window approach. At every step, only the last $k=5$ scans are considered. This straightforward method achieves temporal and spatial relevance: we do not store points that have been observed a long time in the past or points that are far away from the current location.
+
+One drawback is that it hinders the implementation of a loop-closure mechanism, as there is no possibility to perform registration against older scans, but this is not a stringent problem, as the usage of GNSS readings prevents large localization drifts.
+
 \subsection{Graph Optimization}
 \label{subsec:graph-optimization}
+
+As stated earlier, we also experimented with solutions that employ factor graph optimization, thanks to its natural affinity to the SLAM problem. A factor graph \cite{dellaert2012factor} is a bipartite graph where nodes represent either:
+\begin{compactitem}
+	\item variables --- these refer to variables in the problem domain; in our case, they are the estimated poses $\pose_i$ associated with each LiDAR scan, or
+	\item factors --- probabilistic constraints, derived from measurements or prior information, whose residuals are to be minimized.
+\end{compactitem}
+
+\newcommand{\tigps}{\pose_i^{\text{GPS}}}
+\newcommand{\tijicp}{\pose_{ij}^{\text{ICP}}}
+\newcommand{\covigps}{\matx{\Sigma}_i^{\text{GPS}}}
+\newcommand{\covijicp}{\matx{\Sigma}_{ij}^{\text{ICP}}}
+In our problem, two types of factors are employed. The GPS readings $\left(\tigps, \covigps\right)$ introduce unary factors that constrain a single pose variable. The twist vector residual is:
+\begin{equation}
+	\vecx{r}_i^{\text{GPS}}\left(\pose_i\right) =
+	\Logmap{\left(\tigps\right)^{-1}\pose_i}
+	\eqdot
+\end{equation}
+Odometry measurements $\left(\tijicp, \covijicp\right)$ obtained from the point cloud registration create binary factors that are connected to the two pose variables between which the displacement occurred. The associated residual is:
+\begin{equation}
+	\vecx{r}_{ij}^{\text{ICP}}\left(\pose_i, \pose_j\right) =
+	\Logmap{\left(\tijicp \right)^{-1} \left(\pose_i^{-1} \pose_j\right)}
+	\eqdot
+\end{equation}
+If we define a covariance-scaled norm $
+	\normm{\vecx{r}}_{\matx{\Sigma}}^2 =
+	\transpose{\vecx{r}}\matx{\Sigma}^{-1}\vecx{r}
+$ (note the similarity with Eq. \ref{eq:mah-distance}), we can formulate the joint optimization problem:
+\begin{equation}
+	\mathfrak{T}^{*} = \underset{\mathfrak{T}}{\text{argmin}}
+	\left(
+	\sum_{i} \normm{\vecx{r}_i^{\text{GPS}}\left(\pose_i\right)}_{\covigps}^2
+	+
+	\sum_{i} \normm{\vecx{r}_{ij}^{\text{ICP}}\left(\pose_i, \pose_j\right)}_{\covijicp}^2
+	\right)
+	\eqdot
+\end{equation}
+In contrast with Section \ref{subsec:reconciling}, this addresses the entire set of pose estimates, which is essential if trajectory corrections are to be applied retroactively and not just for the current pose.
+
+The generic formulation of the registration pose residual $\vecx{r}_{ij}^{\text{ICP}}$ allows for a modification that improves overall map quality. At time step $k$, after aligning the current scan $P_k$ to the existing local map built from scans $\left\{P_{k-5}, \dots P_{k-1}\right\}$, we create two odometry factors, for $\left(\pose_{k-1},\pose_k\right)$ and $\left(\pose_{k-2},\pose_k\right)$. The latter is motivated by the early observation that a registration-only trajectory yields a high-quality 3D map, so we use an odometry factor to enforce the registration result not only between consecutive poses.
+
+
+%% registration covariance estimation
+
+%% diagram of graph poses and factors
+
+
+
+
+
 
 \section{Implementation details}
 

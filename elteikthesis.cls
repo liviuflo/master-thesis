@@ -351,6 +351,7 @@
 \newcommand{\customreslinnoxi}{\Log{\pose_0^{-1} \Mtx{}}}
 
 \newcommand{\normtwo}[1]{\left|\left|{#1}\right|\right|_2}
+\newcommand{\normm}[1]{\left|\left|{#1}\right|\right|}
 
 \newcommand{\eg}{e.g., }
 \newcommand{\ie}{i.e., }
