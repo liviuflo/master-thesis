@@ -120,7 +120,7 @@ To conclude this section, we recognize and underline the importance of accurate 
 		\includegraphics[width=0.45\linewidth]{images/example-trajectory.png}}
 	\hspace{1pt}
 	\subcaptionbox{Standard deviation of GNSS readings along the trajectory.}{
-		\includegraphics[width=0.45\linewidth]{images/example-trajectory-sigma.png}}
+		\includegraphics[width=0.45\linewidth]{images/example-trajectory-sigma.pdf}}
 	\caption[Example dataset trajectory]{An example dataset collected in rural Germany (Lienziegen).}
 	\label{fig:example-trajectory}
 \end{figure}
@@ -560,7 +560,7 @@ All of the above can constitute the residual terms when computing the optimal tr
 
 \begin{figure}
 	\centering
-	\includegraphics[width=0.5\linewidth]{images/robust-fn.png}
+	\includegraphics[width=0.5\linewidth]{images/robust-fn.pdf}
 	\caption[Robust residual function]{Applying the Geman-McClure function ($\kappa=0.11$) to the correspondence residuals modifies their relative contribution during least-squares optimization, potentially improving convergence.}
 	\label{fig:robust-residual}
 \end{figure}
@@ -617,7 +617,7 @@ Filtering discards points with entropy above a certain percentile, to avoid sett
 	}
 	\hfill
 	\subcaptionbox{Per-scan entropy across a section of the dataset. Entropy values vary depending on the scene features, making it difficult to find a satisfactory global threshold.\label{fig:sub-entr-log}}{
-		\includegraphics[width=0.48\linewidth]{images/entropy-log.png}
+		\includegraphics[width=0.48\linewidth]{images/entropy-log.pdf}
 	}
 	\caption[Filtering using entropy]{Point Cloud entropy analysis.}
 	\label{fig:entropy-analysis}
