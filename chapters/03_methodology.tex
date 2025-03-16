@@ -285,7 +285,7 @@ The final architecture is the result of a series of experiments. The process beg
 
 Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was evolving, it was tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
 
-Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
+Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization \cite{dellaert2017factor}, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
 
 
 \subsection{Reconciling motion prediction, GNSS and registration}
@@ -305,7 +305,7 @@ Each of these serves a different purpose: using only $\tkicp$ would lead to a hi
 
 In an initial trial, we observed what happens when the GPS pose is used as the initial state of the registration algorithm, with the intuition that this could prevent trajectory divergence without significantly affecting map quality. In practice, this leads to an unwanted behavior. At first, the registration is not affected by the input pose, converging to the pure $\tkicp$. As the map grows, the divergence is not constrained, so it reaches a stage where the $\tkgps$ pose is a very poor initial guess for registration, which gets stuck in a local minimum. Depending on the displacement between scans and the nature of the 3D scenes, this can even happen after just a few scans.
 
-A subsequent idea was to treat $\tkicp$ as local refinement for $\tkgps$, by applying an interpolation, as defined in Eq. \ref{eq:se3-interpolation}. If $\pose_k = \varphi\left(\tkgps, \tkicp, \alpha\right)$, the interpolation parameter $\alpha$ controls how much the registration pose is allowed to alter the GPS prior --- when $\alpha = 1$, we obtain the pure registration-based trajectory. This approach can prevent trajectory divergence while improving map quality, for small values of $\alpha$ (\eg 0.1) but because $\alpha$ is fixed, it does not address the problem of varying GPS noise or faulty registration results.
+A subsequent idea was to treat $\tkicp$ as local refinement for $\tkgps$, by applying an interpolation, as defined in Eq. \ref{eq:se3-interpolation}. If $\pose_k = \varphi\left(\tkgps, \tkicp, \alpha\right)$, the interpolation parameter $\alpha$ controls how much the registration pose is allowed to alter the GPS prior --- when $\alpha = 1$, we obtain the pure registration-based trajectory. This approach can prevent trajectory divergence while improving map quality, for small values of $\alpha$ (\eg 0.1). However, since $\alpha$ is fixed, it does not address the problem of varying GPS noise or faulty registration results.
 
 This can also be formulated as a generic optimization problem. First, we define a distance measure between an arbitrary pose $\pose_{}$ and a target pose $\Mtx{}$:
 
@@ -374,7 +374,7 @@ Next, we can derivate the $\mathcal{D}$ function with respect to $\xi$:
 	\eqdot
 \end{align}
 
-The minimum of the cost function in Eq. \ref{eq:costfn} occurs when:
+The minimum of the cost function in Eq.~\ref{eq:costfn} occurs when:
 \begin{equation}
 	\sum_{\Mtx{}} -\betaM \CovM^{-1}\customreslin = 0
 	\comma
@@ -386,7 +386,7 @@ which, when solved for $\xi$, gives:
 	\eqdot
 \end{equation}
 
-The final pose is reconstructed using the relationship in Eq. \ref{eq:poselin}. We note that this procedure actually computes a weighted combination of poses --- both the covariance matrices and the $\betaM$ terms act as weights. For small covariance values, the contribution of the associated pose $\Mtx{}$ is large, because $\CovM$ is inverted. In practice, we found it convenient to only take into account the covariances, in order to avoid having to adjust the additional $\betaM$ terms, which scale the weights linearly.
+The final pose is reconstructed using the relationship in Eq.~\ref{eq:poselin}. We note that this procedure actually computes a weighted combination of poses --- both the covariance matrices and the $\betaM$ terms act as weights. For small covariance values, the contribution of the associated pose $\Mtx{}$ is large, because $\CovM$ is inverted. In practice, we found it convenient to only take into account the covariances, in order to avoid having to adjust the additional $\betaM$ terms, which scale the weights linearly.
 
 
 
@@ -453,20 +453,20 @@ This type of motion prediction method suffers from several disadvantages which o
 		\includegraphics[width=0.47\linewidth]{images/rotation.png}
 	}
 	\hspace{1pt}
-	\subcaptionbox{If the motion model is too confident in its velocity estimate, or uneven time intervals are not handled correctly, the motion prediction will overshoot. Trajectory starts from bottom.\label{fig:motion-model-overshoot}}{
-		\includegraphics[width=0.47\linewidth]{images/motion-overshoot.png}
+	\subcaptionbox{If the motion model is too confident in its velocity estimate, or uneven time intervals are not handled correctly, the motion prediction will overshoot. Trajectory starts from top right.\label{fig:motion-model-overshoot}}{
+		\includegraphics[width=0.47\linewidth]{images/motion-overshoot.pdf}
 	}
 	\caption[Motion model challenges]{Challenges of using a Kalman Filter motion model.}
 	\label{fig:motion-pred-trouble}
 \end{figure}
 
 
-The approach that we propose relies on the interpolation properties of the $\SE{3}$ manifold (Eq. \ref{eq:se3-interpolation}). In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$. For the scenarios that we have tested on, this provides a very good approximation of the correct displacement, which can be further refined using the information in the point cloud.
+The approach that we propose relies on the interpolation properties of the $\SE{3}$ manifold (Eq.~\ref{eq:se3-interpolation}). In our case, using $\pose_{t-1}$ and $\pose_{t}$ to compute $\pose_{t+1}'$ is actually a matter of extrapolation, because we expect $\alpha$ to be approximately 2 at most steps, which would lead to unstable behaviour in the Lie group transformation. To avoid this, we first compute $\pose_{t+1}'' = \pose_{t}\pose_{t-1}^{-1}\pose_{t}$, and then obtain $\pose_{t+1}' = \varphi\left(\pose_t, \pose_{t+1}'', \alpha_{t}-1\right)$, where $\alpha_{t}= \frac{s_{t+1} - s_{t-1}}{s_t - s_{t-1}}$. For the scenarios that we have tested on, this provides a very good approximation of the correct displacement, which can be further refined using the information in the point cloud.
 
 \subsection{Point Cloud Registration}
 \label{subsec:registration}
 
-The LiDAR sensor perceives the environment in a digital, discrete way, and outputs a set of 3D coordinates in the local frame. In a static scene, or after accurate motion compensation (Section \ref{subsec:motion-compensation}), this represents a high-quality 3D snapshot of the environment from the current viewpoint. The mechanical design of the sensor introduces some particularities in the data \reffigbr{pcd-effects}, but the measurement accuracy is excellent. As described earlier, applying a noise-resilient registration algorithm between consecutive scans constitutes a sensible odometry estimate.
+The LiDAR sensor perceives the environment in a digital, discrete way, and outputs a set of 3D coordinates in the local frame. In a static scene, or after accurate motion compensation (Section~\ref{subsec:motion-compensation}), this represents a high-quality 3D snapshot of the environment from the current viewpoint. The mechanical design of the sensor introduces some particularities in the data \reffigbr{pcd-effects}, but the measurement accuracy is excellent. As described earlier, applying a noise-resilient registration algorithm between consecutive scans constitutes a sensible odometry estimate.
 
 \begin{figure}
 	\centering
@@ -623,7 +623,7 @@ Filtering discards points with entropy above a certain percentile, to avoid sett
 	\label{fig:entropy-analysis}
 \end{figure}
 
-More advanced techniques involve finding points or structures that can be identified in multiple scans (also referred to as \emph{landmarks}, in the SLAM paradigm), either through feature extraction \cite{fpfh} or 3D segmentation, but this introduces a map representation that is not really applicable to our use case.
+More advanced techniques involve finding salient points or structures that can be identified in multiple scans (also referred to as \emph{landmarks}, in the SLAM paradigm), either through feature extraction \cite{fpfh} or 3D segmentation, but this introduces a map representation that is not really applicable to our use case.
 
 We employ a voxelization mechanism similar to \cite{vizzo2023ral}, to balance computation time and noise robustness. The 3D space is divided into equal-size cells and the first point in each cell is kept. The voxel size controls the resolution of the filtered point cloud, and should be smaller than the distance threshold used for correspondence generation, to avoid degenerate scenarios.
 
@@ -686,7 +686,7 @@ Odometry measurements $\left(\tijicp, \covijicp\right)$ obtained from the point 
 If we define a covariance-scaled norm $
 	\normm{\vecx{r}}_{\matx{\Sigma}}^2 =
 	\transpose{\vecx{r}}\matx{\Sigma}^{-1}\vecx{r}
-$ (note the similarity with Eq. \ref{eq:mah-distance}), we can formulate the joint optimization problem:
+$ (note the similarity with Eq.~\ref{eq:mah-distance}), we can formulate the joint optimization problem:
 \begin{equation}
 	\mathfrak{T}^{*} = \underset{\mathfrak{T}}{\text{argmin}}
 	\left(
@@ -696,7 +696,7 @@ $ (note the similarity with Eq. \ref{eq:mah-distance}), we can formulate the joi
 	\right)
 	\eqdot
 \end{equation}
-In contrast with Section \ref{subsec:reconciling}, this addresses the entire set of pose estimates, which is essential if trajectory corrections are to be applied retroactively and not just for the current pose.
+In contrast with Section~\ref{subsec:reconciling}, this addresses the entire set of pose estimates, which is essential if trajectory corrections are to be applied retroactively and not just for the current pose.
 
 The generic formulation of the registration pose residual $\vecx{r}_{ij}^{\text{ICP}}$ allows for a modification that improves overall map quality. At time step $k$, after aligning the current scan $P_k$ to the existing local map built from scans $\left\{P_{k-5}, \dots P_{k-1}\right\}$, we create two odometry factors, for $\left(\pose_{k-1},\pose_k\right)$ and $\left(\pose_{k-2},\pose_k\right)$. The latter is motivated by the early observation that a registration-only trajectory yields a high-quality 3D map, so we use an odometry factor to enforce the registration result not only between consecutive poses.
 
