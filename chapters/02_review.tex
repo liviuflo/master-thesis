@@ -18,7 +18,7 @@ Another large group of methods is represented by \emph{Visual SLAM}, when camera
 
 \section{Point cloud Registration}
 
-Before discussing LiDAR-based approaches in more detail, let us review the task of point cloud registration. Given two sets of points $P, Q$ in arbitrary reference frames, representing (at least partially) the same scene, the goal is to find the transformation $\matx{T} \in \SE{3} $ (translation and rotation) that best aligns the points. This can be expressed as an optimization problem:
+Before discussing LiDAR-based approaches in more detail, let us review the task of point cloud registration. Given two sets of points $P, Q$ in arbitrary reference frames, representing (at least partially) the same scene, the goal is to find the transformation \mbox{$\matx{T} \in \SE{3}$} (translation and rotation) that best aligns the points. This can be expressed as an optimization problem:
 
 \begin{equation}
     \underset{\matx{T}}{\operatorname{argmin}}\,J(\matx{T}P, Q)\comma

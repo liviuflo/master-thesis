@@ -20,9 +20,11 @@ Let us first introduce the mathematical notions used throughout this work. The g
 		-w_2 & w_1  & 0
 	\end{bmatrix}
 \end{equation}
-and $\so{3} = \left\{\what : \vecx{w} \in \RR^3 \right\}$ is the set of all such matrices. Using Rodrigues' formula \cite{murray2017mathematical}, the exponential maps $\text{exp}: \so{3} \rightarrow \SO{3}$ and $\text{Exp} :\RR^3 \rightarrow \SO{3}$ are defined:
+and $\so{3} = \left\{\what : \vecx{w} \in \RR^3 \right\}$ is the set of all such matrices.
+The exponential maps \mbox{$\text{exp}:\so{3} \rightarrow \SO{3}$} and \mbox{$\text{Exp} :\RR^3 \rightarrow \SO{3}$} are defined as
+\mbox{$\expmap{\what} =\Expmap{\wvec}= e^{\what}$}, and Rodrigues' formula \cite{murray2017mathematical} provides a closed formulation of the matrix exponential:
 \begin{equation}
-	\expmap{\what} =\Expmap{\wvec}= \matx{I}_3 + \frac{\what}{\wmod} \sin{\wmod} + \frac{\what^2}{\wmod^2}\left(1 - \cos{\wmod}\right)\text{.}
+	e^{\what}= \matx{I}_3 + \frac{\what}{\wmod} \sin{\wmod} + \frac{\what^2}{\wmod^2}\left(1 - \cos{\wmod}\right)\eqdot
 \end{equation}
 The inverse operations are $\text{log}:  \SO{3} \rightarrow \so{3}$ and $\text{Log} :\SO{3} \rightarrow \RR^3$, respectively. If $\what = \logmap{\matx{R}}$ and $\matx{R} \neq \matx{I}_3$, then:
 \begin{equation}
@@ -31,6 +33,7 @@ The inverse operations are $\text{log}:  \SO{3} \rightarrow \so{3}$ and $\text{L
 	\frac{\wvec}{\wmod} = \frac{1}{2\sin{\wmod}}\begin{bmatrix}
 		r_{32} - r_{23} \\ r_{13} - r_{31} \\ r_{21}-r_{12}
 	\end{bmatrix}
+	\comma
 \end{equation}
 and if $\matx{R} = \matx{I}_3$, $\wmod=0$.
 
@@ -249,7 +252,7 @@ At its core, the odometry and mapping solution that we propose requires minimal 
 
 Let $\mathfrak{P} = \left\{ P_0, P_1, \dots P_n\right\}$ represent the set of point clouds that we operate on, with point coordinates $P_k = \left\{\vecx{p}_{k,i} : \vecx{p}_{k,i} \in \RR^3 \right\}$ expressed in the local frame, $\mathfrak{s} = \left\{ s_0, s_1, \dots s_n\right\}$ the corresponding timestamps, and $\widehat{\mathfrak{T}} = \left\{ \gtposei{0}, \gtposei{1}, \dots \gtposei{n} \right\}$ the ground truth poses at which each scan was captured. In an ideal setting, a point cloud registration algorithm would take $P_i$ and $P_{i+1}$ as input and return the transformation $\Delta\gtposei{i} = \gtposei{i}^{-1} \gtposei{i+1}$, \ie the ground truth displacement between consecutive poses. This would correspond to a perfect odometry model, and the complete trajectory could be reconstructed by accumulating the computed displacement. Unfortunately, with the exception of some simulation environments, such an approach is not actually feasbile. As we have already seen, LiDAR output is not perfect, especially in dynamic scenes, and some scenarios are simply unsuitable for odometry estimation based on 3D features \cite{lidartunnel}.
 
-The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose $\pose_k \in \SE{3}$ represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, each transformed according to their respective pose:
+The output of our solution can be formulated as $\mathfrak{T} = \left\{ \pose_0, \pose_1, \dots \pose_n\right\}$. Pose \mbox{$\pose_k \in \SE{3}$} represents the estimated location and orientation of the \emph{ego} frame from which the points $P_k$ were observed. The complete \emph{map} estimate, represented as a larger point cloud in global coordinates, is the set of all points, each transformed according to their respective pose:
 \begin{equation}
 	M\left(\mathfrak{T}, \mathfrak{P}\right) =
 	\left\{
@@ -278,7 +281,7 @@ The final architecture is the result of a series of experiments. The process beg
 
 \begin{figure}[h]
 	\centering
-	\includegraphics[width=0.45\linewidth]{images/deviation_30s.pdf}
+	\includegraphics[width=0.5\linewidth]{images/deviation_30s.pdf}
 	\caption[Trajectory deviation from GPS]{When the GPS information is not used, the trajectory computed based on LiDAR data diverges. Here, after 300 scans (approx. 30 seconds), the last location is approx. 0.5m away from the corresponding GPS position.}
 	\label{fig:deviation-no-gps}
 \end{figure}
