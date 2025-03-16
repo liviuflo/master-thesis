@@ -11,7 +11,7 @@ We present the hardware involved in \gls{sensorfusion}, describe the data acquis
 \newcommand{\wmod}{\left|\vecx{w}\right|}
 \newcommand{\xihat}{\widehat{\xi}}
 
-Let us first introduce the mathematical notions used throughout this work. The group of rotations in 3D space is $SO{3} = \left\{\matx{R} \in \RR^{3\times3} : \det{\matx{R}} = 1, \transpose{\matx{R}}\matx{R} = \matx{I}_3 \right\}$. For any vector $\wvec \in \RR^3$ we can define a \emph{skew-symmetric} matrix:
+Let us first introduce the mathematical notions used throughout this work. The group of rotations in 3D space is $\SO{3} = \left\{\matx{R} \in \RR^{3\times3} : \det{\matx{R}} = 1, \transpose{\matx{R}}\matx{R} = \matx{I}_3 \right\}$. For any vector $\wvec \in \RR^3$ we can define a \emph{skew-symmetric} matrix:
 \begin{equation}
 	\what  = \skewsym{\wvec} =
 	\begin{bmatrix}
@@ -98,7 +98,7 @@ In this context, hardware refers to the set of sensors used for data collection,
 
 \subsection{LiDAR Sensor}
 
-The SDX-Compact \reffig{sdx-compact} is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$. The maximum operational range is 120m, decreasing to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
+The SDX-Compact \reffigbr{sdx-compact} is equipped with a Pandar XT32 \cite{hesai_xt16_32_32m} LiDAR sensor, manufactured by Hesai Technology. This is a mechanical rotating LiDAR with a full $360 \degree$ horizontal field of view and 32 beams distributed vertically, at $1 \degree$ resolution. With our settings, the sensor produces 10 complete scans per second, resulting in a horizontal resolution of $0.18 \degree$. The maximum operational range is 120m, decreasing to 50m for low-reflectivity targets. The official specifications state a typical accuracy of $\pm 1$cm, with precision $\pm 0.5$cm, in a static environment. For each beam, the strongest return is processed, leading to 640,000 points being generated per second. The high output bandwidth is handled by an Ethernet connection, over which points are sent as \acrshort{udp} packets. The sensor also supports \acrshort{ptp} synchronisation, essential for high-quality sensor fusion.
 
 The same device has been used for LiDAR odometry applications in the past \cite{kicp}, and has similar specifications to other popular scanners, such as Velodyne VLP-32C, Ouster OS1-32 or Robosense Helios 32.
 
@@ -130,9 +130,9 @@ To conclude this section, we recognize and underline the importance of accurate 
 
 \section{Data acquisition and pre-processing}
 
-Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (\eg up to 40km/h). \reffig{example-trajectory} In comparison with other public datasets \cite{nuscenes, pixset}, capturing data in non-urban environments introduces some challenges --- scenes dominated by vegetation, with few identifiable features, uneven terrain --- while minimizing others --- negligible amount of dynamic objects, no tall buildings that could affect GNSS signal propagation.
+Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (\eg up to 40km/h), see Fig.~\ref{fig:example-trajectory}. In comparison with other public datasets \cite{nuscenes, pixset}, capturing data in non-urban environments introduces some challenges --- scenes dominated by vegetation, with few identifiable features, uneven terrain --- while minimizing others --- negligible amount of dynamic objects, no tall buildings that could affect GNSS signal propagation.
 
-The raw sensor output is uploaded to a cloud storage facility, and is later processed into \emph{data frames} that fuse the available information \reffig{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
+The raw sensor output is uploaded to a cloud storage facility, and is later processed into \emph{data frames} that fuse the available information \reffigbr{data-sync}. This can occur because the sensors are PTP-synchronized on initialization, and all recorded data is timestamped.
 
 
 \begin{figure}
@@ -201,7 +201,7 @@ If $\lidartoego$ is the pose of the LiDAR in the ego frame (from extrinsic calib
 \subsection{Motion compensation}
 \label{subsec:motion-compensation}
 
-At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffig{motion-comp-pre}
+At this stage, it is worth discussing the distortion effect that occurs when a rotating LiDAR sensor is moved at a relatively high velocity. Because it operates in a relative coordinate frame and different beams of the sweep are fired at different times, the beams corresponding to azimuth $0 \degree$ will fire approximately 100ms earlier than the beams corresponding to azimuth $359 \degree$. Placing the resulting points in the same coordinate frame would lead to undesired artifacts, such as duplicate or warped structures. \reffigbr{motion-comp-pre}
 
 \begin{figure}[h]
 	\centering
@@ -274,7 +274,7 @@ This uncovers two possible evaluation directions, which also constitute the high
 
 \subsection{Overview}
 
-The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffig{kiss-icp-architecture} In this approach, scans are processed one-by-one, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides a localization estimate at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffig{deviation-no-gps}, creating a distorted map.
+The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffigbr{kiss-icp-architecture} In this approach, scans are processed one-by-one, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides a localization estimate at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffigbr{deviation-no-gps}, creating a distorted map.
 
 \begin{figure}[h]
 	\centering
@@ -439,7 +439,7 @@ $ and $\Qdt$ is the estimated process noise, which scales with the time interval
 
 The $\vecx{z}_k$ vector consists of a location $\transpose{\left[x_\text{GPS}, y_\text{GPS}, z_\text{GPS}\right]}$ and velocity values $\frac{1}{\Delta t}\transpose{\left[x_\text{GPS} - x_k, y_\text{GPS} - y_k, z_\text{GPS} - z_k\right]}$, assuming linear displacement. The Jacobian $\matx{H}$ with respect to the state vector is $\matx{I}_6$, and the covariance of the measurement noise $\matx{R}$ can be estimated using the covariance of the GNSS reading. If no GNSS reading is associated with the current scan, the pose estimate is retrieved from the predicted position $\kfxpred{k+1}$, and the update step is performed based on the pose computed by the registration procedure.
 
-This type of motion prediction method suffers from several disadvantages which outweigh its benefits for our use case. Firstly, it does not address the rotation component of the poses. Some possible workarounds include copying the orientation from the previous pose and letting the registration component correct that --- this has been observed to fail when a larger time gap occurs, especially for curved trajectories \reffig{reg-failure-rotation} ---, using the rotation returned by the INS, or having a separate method for computing the new rotation. Secondly, it introduces the need for reliable noise estimation \reffig{motion-model-overshoot}, such that the model is reactive to unexpected movement, while filtering out measurement noise. Process noise covariance $\matx{Q(\Delta t)}$ and the measurement input covariance $\matx{R}$ require approximations which are difficult to balance for a general solution. Therefore, using the estimated uncertainty of the predicted pose in further computations would only propagate potential sources of error.
+This type of motion prediction method suffers from several disadvantages which outweigh its benefits for our use case. Firstly, it does not address the rotation component of the poses. Some possible workarounds include copying the orientation from the previous pose and letting the registration component correct that --- this has been observed to fail when a larger time gap occurs, especially for curved trajectories \reffigbr{reg-failure-rotation} ---, using the rotation returned by the INS, or having a separate method for computing the new rotation. Secondly, it introduces the need for reliable noise estimation \reffigbr{motion-model-overshoot}, such that the model is reactive to unexpected movement, while filtering out measurement noise. Process noise covariance $\matx{Q(\Delta t)}$ and the measurement input covariance $\matx{R}$ require approximations which are difficult to balance for a general solution. Therefore, using the estimated uncertainty of the predicted pose in further computations would only propagate potential sources of error.
 
 % \begin{figure}[h]
 % 	\centering
@@ -466,7 +466,7 @@ The approach that we propose relies on the interpolation properties of the $\SE{
 \subsection{Point Cloud Registration}
 \label{subsec:registration}
 
-The LiDAR sensor perceives the environment in a digital, discrete way, and outputs a set of 3D coordinates in the local frame. In a static scene, or after accurate motion compensation (Section \ref{subsec:motion-compensation}), this represents a high-quality 3D snapshot of the environment from the current viewpoint. The mechanical design of the sensor introduces some particularities in the data \reffig{pcd-effects}, but the measurement accuracy is excellent. As described earlier, applying a noise-resilient registration algorithm between consecutive scans constitutes a sensible odometry estimate.
+The LiDAR sensor perceives the environment in a digital, discrete way, and outputs a set of 3D coordinates in the local frame. In a static scene, or after accurate motion compensation (Section \ref{subsec:motion-compensation}), this represents a high-quality 3D snapshot of the environment from the current viewpoint. The mechanical design of the sensor introduces some particularities in the data \reffigbr{pcd-effects}, but the measurement accuracy is excellent. As described earlier, applying a noise-resilient registration algorithm between consecutive scans constitutes a sensible odometry estimate.
 
 \begin{figure}
 	\centering
@@ -566,7 +566,7 @@ All of the above can constitute the residual terms when computing the optimal tr
 \end{figure}
 \newcommand{\residuali}{\vecx{r}_{i}}
 \newcommand{\residualjac}{\matx{J}_{\residuali}}
-Moreover, we apply the Geman-McClure function \reffig{robust-residual} on the point-to-point distance metric, like in \cite{vizzo2023ral}, which diminishes the influence of large residuals during minimization. For a residual $r$, this is defined as:
+Moreover, we apply the Geman-McClure function \reffigbr{robust-residual} on the point-to-point distance metric, like in \cite{vizzo2023ral}, which diminishes the influence of large residuals during minimization. For a residual $r$, this is defined as:
 \begin{equation}
 	\rho(r) = \frac{r^2/2}{\kappa + r^2}
 	\comma
@@ -606,9 +606,9 @@ We have also experimented with approaches that decrease the size of the point cl
 Similarly, random downsampling is not effective, because it does not address the noise issues.
 
 A promising method was based on the formulation described in \cite{adolfsson2021coral}, which computes a per-point entropy measure using the covariance of its neighborhood.
-A low entropy value indicates a structured, well-formed region (\eg points on a planar surface), while high entropy is usually associated with noisy regions. \reffig{sub-entr-view}
+A low entropy value indicates a structured, well-formed region (\eg points on a planar surface), while high entropy is usually associated with noisy regions. \reffigbr{sub-entr-view}
 The size of the neighborhood, defined as a radius around each point, was set to 0.3m.
-Filtering discards points with entropy above a certain percentile, to avoid setting a fixed threshold that would not be able to adjust to variable scene features. \reffig{sub-entr-log} Unfortunately, this is computationally expensive and does not visibly improve registration results.
+Filtering discards points with entropy above a certain percentile, to avoid setting a fixed threshold that would not be able to adjust to variable scene features. \reffigbr{sub-entr-log} Unfortunately, this is computationally expensive and does not visibly improve registration results.
 
 \begin{figure}
 	\centering
