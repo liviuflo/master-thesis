@@ -345,7 +345,7 @@ Another approach is to see $\tkicp$ as the optimal registration pose and have
 	\costreg(\pose) = \dfunc{\pose, \tkicp, \covicp}
 	\comma
 \end{equation}
-where $\covicp$ is a covariance matrix that estimates the registration uncertainty --- this is explained in more detail in Section \ref{subsec:registration}. The cost function becomes a weighted sum of $\mathcal{D}$ functions. We aim to compute the analytical solution of:
+where $\covicp$ is a covariance matrix that estimates the registration uncertainty --- this is explained in more detail in Section \ref{subsec:registration}. The cost function becomes a weighted sum of $\mathcal{D}$ functions, so the optimization problem at time step $k$ is:
 \newcommand{\betaM}{\beta_{\Mtx{}}}
 \begin{equation}
 	\label{eq:costfn}
@@ -354,42 +354,96 @@ where $\covicp$ is a covariance matrix that estimates the registration uncertain
 	\sum_{\Mtx{}} \betaM\dfunc{\pose, \Mtx{}, \CovM}
 	\eqdot
 \end{equation}
-First, we linearize $\pose$ around a constant pose $\pose_0$, with a perturbation $\xi \in \RR^6$:
+As this is intractable on the non-linear manifold $\SE{3}$, an approximation of the solution can be computed using the Weiszfeld algorithm (\ref{alg:weiszfeld}). We disregard the scalar weights $\betaM$, as they can be accounted for, numerically, in the covariances $\CovM$.
+
+\newcommand{\iterth}{i_\text{max}}
+\newcommand{\xinew}{\xi_{\text{new}}}
+\begin{algorithm}
+	\caption[Weiszfeld algorithm.]{Weiszfeld algorithm for minimizing a custom pose distance metric.}
+	\label{alg:weiszfeld}
+
+	\textbf{Input:}
+	\begin{compactitem}
+		\item $\mathcal{M}$: list of poses $\Mtx{}$ with associated covariance $\CovM$
+		\item $\pose_0$: pose to linearize around
+		\item $\iterth$: upper iteration threshold for the algorithm
+	\end{compactitem}
+	\textbf{Output:}
+	\begin{compactitem}
+		\item $\pose$: approximation of the pose that minimizes $\sum_{\Mtx{}} \dfunc{\pose, \Mtx{}, \CovM}$
+	\end{compactitem}
+	\textbf{\underline{Funct}} Weiszfeld($\mathcal{M}, \pose_0, \iterth$)
+	\begin{algorithmic}[1] % number every line
+		\State $\xi \leftarrow \vecx{0}_{6\times 1}$
+		\For{$i=1, \dots, \iterth$}
+		\State $\pose \leftarrow \pose_0\Expmap{\xi}$
+		\State $w_{\xi}  = \sum_{\Mtx{}}\Logmap{\pose^{-1} \Mtx{}}/\dfunc{\pose, \Mtx{}, \CovM}$
+		\State $w  = \sum_{\Mtx{}}1/\dfunc{\pose, \Mtx{}, \CovM}$
+		\State $\xinew = w_{\xi} / w$
+		\If{$\normtwo{\xinew - \xi} < 10^{-7}$}
+		\State \textbf{break} \Comment{Early stop, no significant improvement occurred}
+		\EndIf
+		\State $\xi \leftarrow \xinew$
+		\EndFor
+		\State \textbf{return} $\pose$
+	\end{algorithmic}
+\end{algorithm}
+
+Alternatively, we observe that Eq.~\ref{eq:costfn} involves a covariance-weighted sum of residuals, so another approximation of the solution is obtained from the covariance-weighted average in the twist vector space:
 \begin{equation}
-	\label{eq:poselin}
-	\pose = \pose_0 \Expmap{\xi}
+	\xi = \left(\sum_{\Mtx{}}\CovM^{-1}\right)^{-1}
+	\sum_{\Mtx{}}\CovM^{-1}\customreslinnoxi
 	\comma
 \end{equation}
-which leads to:
-\begin{align}
-	\customres
-	 & = \Log{\left(\pose_0 \Expmap{\xi}\right)^{-1} \Mtx{}} \\
-	 & =	\Log{\Expmap{-\xi}\pose_0^{-1} \Mtx{}}               \\
-	 & =  \Log{\pose_0^{-1} \Mtx{}} - \xi
-	\eqdot
-\end{align}
+where $\pose = \pose_0 \Expmap{\xi}$ and $\pose_0$ is a linearization pose.
 
-Next, we can derivate the $\mathcal{D}$ function with respect to $\xi$:
-\begin{align}
-	\frac{\delta \mathcal{D}}{\delta\xi}
-	 & = \frac{\delta \left(\transpose{\customreslin} \CovM^{-1} \customreslin\right)}{\delta\xi} \\
-	 & = -\CovM^{-1}\customreslin
-	\eqdot
-\end{align}
+\newcommand{\vectm}{\vecx{t}}
+In \acrfull{sfm2} tasks \cite{pan2024global}, pose averaging is split into rotation and translation averaging.
+For a set of matrices $\mathcal{R} = \left\{\matx{R}_i \in \SO{3}\right\}$ with weights $\mathcal{W} = \left\{w_i \in \RR\right\}$,
+we can perform \acrfull{svd} $\matx{U}\matx{D}\transpose{\matx{V}}=\sum_{i} w_i \matx{R}_i$. The \emph{chordal mean} \cite{hartley2013rotation} is then obtained as \mbox{$\bar{\matx{R}}=\matx{U}\transpose{\matx{V}}$}. The scalar weight must be approximated from the covariance matrix, \eg $w_i = \text{tr}\left(\matx{\Sigma}_{\matx{R}_i}\right)$. For translations, we exploit the linearity and compute \mbox{$
+		\bar{\vecx{t}}=
+		\left(\sum_{\vectm}\matx{\Sigma}_{\vectm}^{-1}\right)^{-1}
+		\sum_{\vectm}\matx{\Sigma}_{\vectm}^{-1}\vectm
+	$}.
 
-The minimum of the cost function in Eq.~\ref{eq:costfn} occurs when:
-\begin{equation}
-	\sum_{\Mtx{}} -\betaM \CovM^{-1}\customreslin = 0
-	\comma
-\end{equation}
-which, when solved for $\xi$, gives:
-\begin{equation}
-	\xi = \left(\sum_{\Mtx{}}\betaM\CovM^{-1}\right)^{-1}
-	\sum_{\Mtx{}}\betaM\CovM^{-1}\customreslinnoxi
-	\eqdot
-\end{equation}
+These there approaches have been compared by generating poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it.
 
-The final pose is reconstructed using the relationship in Eq.~\ref{eq:poselin}. We note that this procedure actually computes a weighted combination of poses --- both the covariance matrices and the $\betaM$ terms act as weights. For small covariance values, the contribution of the associated pose $\Mtx{}$ is large, because $\CovM$ is inverted. In practice, we found it convenient to only take into account the covariances, in order to avoid having to adjust the additional $\betaM$ terms, which scale the weights linearly.
+% First, we linearize $\pose$ around a constant pose $\pose_0$, with a perturbation $\xi \in \RR^6$:
+% \begin{equation}
+% 	\label{eq:poselin}
+% 	\pose = \pose_0 \Expmap{\xi}
+% 	\comma
+% \end{equation}
+% which leads to:
+% \begin{align}
+% 	\customres
+% 	 & = \Log{\left(\pose_0 \Expmap{\xi}\right)^{-1} \Mtx{}} \\
+% 	 & =	\Log{\Expmap{-\xi}\pose_0^{-1} \Mtx{}}               \\
+% 	 & =  \Log{\pose_0^{-1} \Mtx{}} - \xi
+% 	\eqdot
+% \end{align}
+
+% Next, we can derivate the $\mathcal{D}$ function with respect to $\xi$:
+% \begin{align}
+% 	\frac{\delta \mathcal{D}}{\delta\xi}
+% 	 & = \frac{\delta \left(\transpose{\customreslin} \CovM^{-1} \customreslin\right)}{\delta\xi} \\
+% 	 & = -\CovM^{-1}\customreslin
+% 	\eqdot
+% \end{align}
+
+% The minimum of the cost function in Eq.~\ref{eq:costfn} occurs when:
+% \begin{equation}
+% 	\sum_{\Mtx{}} -\betaM \CovM^{-1}\customreslin = 0
+% 	\comma
+% \end{equation}
+% which, when solved for $\xi$, gives:
+% \begin{equation}
+% 	\xi = \left(\sum_{\Mtx{}}\betaM\CovM^{-1}\right)^{-1}
+% 	\sum_{\Mtx{}}\betaM\CovM^{-1}\customreslinnoxi
+% 	\eqdot
+% \end{equation}
+
+% The final pose is reconstructed using the relationship in Eq.~\ref{eq:poselin}. We note that this procedure actually computes a weighted combination of poses --- both the covariance matrices and the $\betaM$ terms act as weights. For small covariance values, the contribution of the associated pose $\Mtx{}$ is large, because $\CovM$ is inverted. In practice, we found it convenient to only take into account the covariances, in order to avoid having to adjust the additional $\betaM$ terms, which scale the weights linearly.
 
 
 
@@ -498,7 +552,6 @@ The LiDAR sensor perceives the environment in a digital, discrete way, and outpu
 A baseline for \emph{fine} registration methods, Iterative Closest Point (\refalg{alg:pseudocode-icp}) is naturally applicable to our scenario, albeit with some modifications. As opposed to \emph{coarse} registration, where the aim is to find a rough alignment between arbitrary point clouds, we can exploit the motion prediction and/or the GPS readings as prior information about their global pose.
 
 \newcommand{\distth}{d_\text{max}}
-\newcommand{\iterth}{i_\text{max}}
 \newcommand{\tguess}{\matx{T}_\text{init}}
 \begin{algorithm}
 	\caption[Pseudocode of the point-to-point ICP algorithm.]{Pseudocode of the point-to-point ICP algorithm.}
