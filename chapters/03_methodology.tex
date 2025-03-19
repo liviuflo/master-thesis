@@ -406,18 +406,28 @@ we can perform \acrfull{svd} $\matx{U}\matx{D}\transpose{\matx{V}}=\sum_{i} w_i 
 		\sum_{\vectm}\matx{\Sigma}_{\vectm}^{-1}\vectm
 	$}.
 
-These there approaches have been compared by generating large sets of poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it. The results of this experiment are presented in Fig.~\ref{fig:pose-averaging}.
+These there approaches have been compared by generating large sets of poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it. The results of this experiment are presented in Fig.~\ref{fig:pose-averaging}. We observed no significant effect of either of these methods on the final trajectory, so the covariance-weighted approximation was used, thanks to its straightforward applicability.
 
+\newcommand{\tone}{\vecx{t}_1}
+\newcommand{\ttwo}{\vecx{t}_2}
+\newcommand{\Rone}{\matx{R}_1}
+\newcommand{\Rtwo}{\matx{R}_2}
 \begin{figure}[h]
 	\centering
-	\subcaptionbox{Translation averaging error distribution}{
+	\subcaptionbox{Distribution of translation average errors.}{
 		\includegraphics[width=0.45\linewidth]{images/pose_avg_trans_100s.pdf}
 	}
 	\hspace{1pt}
-	\subcaptionbox{Rotation averaging error distribution}{
+	\subcaptionbox{Distribution of rotation average errors..}{
 		\includegraphics[width=0.45\linewidth]{images/pose_avg_rot_100s.pdf}
 	}
-	\caption[Rotation and translation averaging experiment]{}
+	\caption[Rotation and translation averaging experiment]{Comparing the behaviour of three different pose averaging techniques. We generate a random pose (expected mean), then sample 100 poses around it, by sampling a normal distribution of known $\sigma$ for each parameter.
+		The sample poses are averaged using the target algorithm, and we compute a translation and a rotation error:
+		$e(\tone, \ttwo) = \normtwo{\tone - \ttwo}$
+		and
+		$e(\Rone, \Rtwo)=\normtwo{\Logmap{\Rone^{-1}\Rtwo}}$,
+		respectively.
+	}
 	\label{fig:pose-averaging}
 \end{figure}
 
