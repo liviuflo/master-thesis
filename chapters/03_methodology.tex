@@ -352,9 +352,10 @@ where $\covicp$ is a covariance matrix that estimates the registration uncertain
 	%  \in \left\{\tkicp, \tkgps, \pose'\right\}
 	\pose_k = \underset{\matx{T}}{\text{argmin}}
 	\sum_{\Mtx{}} \betaM\dfunc{\pose, \Mtx{}, \CovM}
-	\eqdot
+	\comma
 \end{equation}
-As this is intractable on the non-linear manifold $\SE{3}$, an approximation of the solution can be computed using the Weiszfeld algorithm (\ref{alg:weiszfeld}). We disregard the scalar weights $\betaM$, as they can be accounted for, numerically, in the covariances $\CovM$.
+where $\Mtx{} \in \left\{ \tkicp, \tkgps, \pose_k'\right\}$.
+As this is intractable on the non-linear manifold $\SE{3}$, an approximation of the solution can be computed using the Weiszfeld algorithm (Alg.~\ref{alg:weiszfeld}). We disregard the scalar weights $\betaM$, as they can be accounted for, numerically, in the covariances $\CovM$.
 
 \newcommand{\iterth}{i_\text{max}}
 \newcommand{\xinew}{\xi_{\text{new}}}
@@ -400,13 +401,13 @@ where $\pose = \pose_0 \Expmap{\xi}$ and $\pose_0$ is a linearization pose.
 \newcommand{\vectm}{\vecx{t}}
 In \acrfull{sfm2} tasks \cite{pan2024global}, pose averaging is split into rotation and translation averaging.
 For a set of matrices $\mathcal{R} = \left\{\matx{R}_i \in \SO{3}\right\}$ with weights $\mathcal{W} = \left\{w_i \in \RR\right\}$,
-we can perform \acrfull{svd} $\matx{U}\matx{D}\transpose{\matx{V}}=\sum_{i} w_i \matx{R}_i$. The \emph{chordal mean} \cite{hartley2013rotation} is then obtained as \mbox{$\bar{\matx{R}}=\matx{U}\transpose{\matx{V}}$}. The scalar weight must be approximated from the covariance matrix, \eg $w_i = \text{tr}\left(\matx{\Sigma}_{\matx{R}_i}\right)$. For translations, we exploit the linearity and compute \mbox{$
+we can first perform \acrfull{svd}, $\matx{U}\matx{D}\transpose{\matx{V}}=\sum_{i} w_i \matx{R}_i$. The \emph{chordal mean} \cite{hartley2013rotation} is then obtained as \mbox{$\bar{\matx{R}}=\matx{U}\transpose{\matx{V}}$}. The scalar weights must be approximated from the covariance matrix, \eg $w_i = \text{tr}\left(\matx{\Sigma}_{\matx{R}_i}\right)$. For translations, we exploit the linearity properties and compute \mbox{$
 		\bar{\vecx{t}}=
 		\left(\sum_{\vectm}\matx{\Sigma}_{\vectm}^{-1}\right)^{-1}
 		\sum_{\vectm}\matx{\Sigma}_{\vectm}^{-1}\vectm
 	$}.
 
-These there approaches have been compared by generating large sets of poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it. The results of this experiment are presented in Fig.~\ref{fig:pose-averaging}. We observed no significant effect of either of these methods on the final trajectory, so the covariance-weighted approximation was used, thanks to its straightforward applicability.
+These three approaches have been compared by generating large sets of poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it. The results of this experiment are presented in Fig.~\ref{fig:pose-averaging}. We observed no significant effect of either of these methods on the final trajectory, so the covariance-weighted approximation was used, thanks to its relatively simple formulation.
 
 \newcommand{\tone}{\vecx{t}_1}
 \newcommand{\ttwo}{\vecx{t}_2}
