@@ -406,7 +406,20 @@ we can perform \acrfull{svd} $\matx{U}\matx{D}\transpose{\matx{V}}=\sum_{i} w_i 
 		\sum_{\vectm}\matx{\Sigma}_{\vectm}^{-1}\vectm
 	$}.
 
-These there approaches have been compared by generating poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it.
+These there approaches have been compared by generating large sets of poses with known covariance around an arbitrary reference pose (treated as the ground truth mean), and assessing how the predicted mean differs from it. The results of this experiment are presented in Fig.~\ref{fig:pose-averaging}.
+
+\begin{figure}[h]
+	\centering
+	\subcaptionbox{Translation averaging error distribution}{
+		\includegraphics[width=0.45\linewidth]{images/pose_avg_trans_100s.pdf}
+	}
+	\hspace{1pt}
+	\subcaptionbox{Rotation averaging error distribution}{
+		\includegraphics[width=0.45\linewidth]{images/pose_avg_rot_100s.pdf}
+	}
+	\caption[Rotation and translation averaging experiment]{}
+	\label{fig:pose-averaging}
+\end{figure}
 
 % First, we linearize $\pose$ around a constant pose $\pose_0$, with a perturbation $\xi \in \RR^6$:
 % \begin{equation}
