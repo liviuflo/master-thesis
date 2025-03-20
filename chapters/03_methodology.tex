@@ -357,8 +357,10 @@ where $\covicp$ is a covariance matrix that estimates the registration uncertain
 where $\Mtx{} \in \left\{ \tkicp, \tkgps, \pose_k'\right\}$.
 As this is intractable on the non-linear manifold $\SE{3}$, an approximation of the solution can be computed using the Weiszfeld algorithm (Alg.~\ref{alg:weiszfeld}). We disregard the scalar weights $\betaM$, as they can be accounted for, numerically, in the covariances $\CovM$.
 
+% TODO update algorithm
 \newcommand{\iterth}{i_\text{max}}
 \newcommand{\xinew}{\xi_{\text{new}}}
+\newcommand{\dmtx}{d_{\Mtx{}}}
 \begin{algorithm}
 	\caption[Weiszfeld algorithm.]{Weiszfeld algorithm for minimizing a custom pose distance metric.}
 	\label{alg:weiszfeld}
@@ -366,7 +368,7 @@ As this is intractable on the non-linear manifold $\SE{3}$, an approximation of 
 	\textbf{Input:}
 	\begin{compactitem}
 		\item $\mathcal{M}$: list of poses $\Mtx{}$ with associated covariance $\CovM$
-		\item $\pose_0$: pose to linearize around
+		\item $\pose_0$: initial pose estimate
 		\item $\iterth$: upper iteration threshold for the algorithm
 	\end{compactitem}
 	\textbf{Output:}
@@ -375,16 +377,23 @@ As this is intractable on the non-linear manifold $\SE{3}$, an approximation of 
 	\end{compactitem}
 	\textbf{\underline{Funct}} Weiszfeld($\mathcal{M}, \pose_0, \iterth$)
 	\begin{algorithmic}[1] % number every line
-		\State $\xi \leftarrow \vecx{0}_{6\times 1}$
+		\State $\pose \leftarrow \pose_0$
 		\For{$i=1, \dots, \iterth$}
-		\State $\pose \leftarrow \pose_0\Expmap{\xi}$
-		\State $w_{\xi}  = \sum_{\Mtx{}}\Logmap{\pose^{-1} \Mtx{}}/\dfunc{\pose, \Mtx{}, \CovM}$
-		\State $w  = \sum_{\Mtx{}}1/\dfunc{\pose, \Mtx{}, \CovM}$
-		\State $\xinew = w_{\xi} / w$
-		\If{$\normtwo{\xinew - \xi} < 10^{-7}$}
-		\State \textbf{break} \Comment{Early stop, no significant improvement occurred}
+		\State $w_{\xi}  \leftarrow \vecx{0}_{6 \times 1}$
+		\State $w  \leftarrow 0$
+		\For{\textbf{each} $\Mtx{} \in \mathcal{M}$}
+		\State $\dmtx \leftarrow \text{max}\left(\dfunc{\pose, \Mtx{}, \CovM}, 10^{-7}\right)$ \Comment{Apply threshold to avoid singularities}
+		\State $w_{\xi} \leftarrow w_{\xi} + \Logmap{\pose^{-1} \Mtx{}}\dmtx^{-1}$
+		\State $w \leftarrow w+ \dmtx^{-1}$
+		\EndFor
+		\If{$w < 10^{-7}$}
+		\State \textbf{break} \Comment{Early stop, degenerate weight sum}
 		\EndIf
-		\State $\xi \leftarrow \xinew$
+		\State $\xi = w_{\xi} / w$
+		\If{$\normtwo{\xi} < 10^{-7}$}
+		\State \textbf{break} \Comment{Early stop, no significant update occurred}
+		\EndIf
+		\State $\pose \leftarrow \pose \Expmap{\xi}$
 		\EndFor
 		\State \textbf{return} $\pose$
 	\end{algorithmic}
