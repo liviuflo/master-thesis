@@ -132,6 +132,7 @@ To conclude this section, we recognize and underline the importance of accurate 
 % 8.86602707 lon
 
 \section{Data acquisition and pre-processing}
+\label{sec:data-acquisition}
 
 Data is collected by mounting the sensor rig on the roof of a vehicle, and driving around a target area at a relatively low speed (\eg up to 40km/h), see Fig.~\ref{fig:example-trajectory}. In comparison with other public datasets \cite{nuscenes, pixset}, capturing data in non-urban environments introduces some challenges --- scenes dominated by vegetation, with few identifiable features, uneven terrain --- while minimizing others --- negligible amount of dynamic objects, no tall buildings that could affect GNSS signal propagation.
 
@@ -288,7 +289,7 @@ The final architecture is the result of a series of experiments. The process beg
 
 Early efforts focused on introducing the GPS readings as a constraint at each step, alongside motion prediction and registration results. This led to experimenting with each component, as well as methods for combining the respective poses, while regularly monitoring the quality of the output trajectories and maps. As the solution was evolving, it was tested on more challenging scenarios, by adding artificial noise to the GPS readings, or skipping some of them altogether.
 
-Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization \cite{dellaert2017factor}, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution, which combines the advantages of the two frameworks in a very intuitive manner.
+Later on, we also considered addressing the pose estimation problem holistically, instead of in an incremental fashion, and experimented with architectures based on factor graph optimization \cite{dellaert2017factor}, where nodes are linked using registration and GPS constraints. The same building blocks are needed, but the relationship between them is guided by the graph paradigm. Eventually, this was adapted to obtain a hybrid solution \reffigbr{solution-architecture}, which combines the advantages of the two frameworks in a very intuitive manner.
 
 
 \subsection{Reconciling motion prediction, GNSS and registration}
@@ -736,7 +737,7 @@ The resulting pose is used to intialize a dense registration stage: $v(S, 0.1)$ 
 
 \subsection{Map Handling}
 
-Because high-quality mapping constitutes one of our primary goals, having a sensible map representation is a key component of the solution. We treat the map as a point cloud in the global frame, built by concatenating a sequence of scans after transforming them with the best pose estimate computed so far. We do not attempt to store a set of key points, as this does not contribute to fine registration, but we constrain the size of the point cloud that we operate on using a sliding window approach. At every step, only the last $k=5$ scans are considered. This straightforward method achieves temporal and spatial relevance: we do not store points that have been observed a long time in the past or points that are far away from the current location.
+Because high-quality mapping constitutes one of our primary goals, having a sensible map representation is a key component of the solution. We treat the map as a point cloud in the global frame, built by concatenating a sequence of scans after transforming them with the best pose estimate computed so far. We do not attempt to store a set of key points, as this does not contribute to fine registration, but we constrain the size of the point cloud that we operate on using a sliding window approach. At every step, only the last $k=5$ scans are considered. This straightforward method ensures temporal and spatial relevance: we do not store points that have been observed a long time in the past or points that are far away from the current location.
 
 One drawback is that it hinders the implementation of a loop-closure mechanism, as there is no possibility to perform registration against older scans, but this is not a stringent problem, as the usage of GNSS readings prevents large localization drifts.
 
@@ -788,37 +789,20 @@ $ (note the similarity with Eq.~\ref{eq:mah-distance}), we can formulate the joi
 In contrast with Section~\ref{subsec:reconciling}, this addresses the entire set of pose estimates, which is essential if trajectory corrections are to be applied retroactively and not just for the current pose.
 
 The generic formulation of the registration pose residual $\vecx{r}_{ij}^{\text{ICP}}$ allows for a modification that improves overall map quality. At time step $k$, after aligning the current scan $P_k$ to the existing local map built from scans $\left\{P_{k-5}, \dots P_{k-1}\right\}$, we create two odometry factors, for $\left(\pose_{k-1},\pose_k\right)$ and $\left(\pose_{k-2},\pose_k\right)$. The latter is motivated by the early observation that a registration-only trajectory yields a high-quality 3D map, so we use an odometry factor to enforce the registration result not only between consecutive poses.
-
-
+The final solution architecture, including the Factor Graph component, is presented in \reffig{solution-architecture}.
+\begin{figure}[h]
+	\centering
+	\includegraphics[width=0.7\linewidth]{images/solution-diagram.pdf}
+	\caption[Solution Architecture]{Solution architecture and workflow.\\At each time step, the Factor Graph provides the best trajectory estimate using the information available so far. Registration is performed against a local map built from recent scans, using a motion-predicted pose as initial estimate. When a new pose is added to the graph, the registration result is used to create odometry factors that link it to previous poses. If a GPS pose is available, it introduces an additional factor.}
+	\label{fig:solution-architecture}
+\end{figure}
 
 \section{Implementation details}
 
-%% diagram of initial architecture
+The experiments and framework described above have been implemented in \mbox{Python 3.8.10}~\cite{Python}, a high-level, interpreted programming language, which enabled fast development iterations.
+We make intensive use of existing libraries for linear algebra operations (NumPy~\cite{harris2020array}, pytransform3d~\cite{Fabisch2019}) and point cloud processing (Open3D~\cite{Zhou2018}). We treat poses and point clouds as NumPy arrays of size $(4, 4)$ and $(n, 3)$, respectively. During the registration process, the nearest-neighbor search required for correspondence generation relies on the KD-tree data structure implemented in SciPy~\cite{2020SciPy-NMeth}. As we do not perform any modifications to the algorithm, we use the Generalized ICP implementation provided by Open3D. For factor graph operations, we chose the popular GTSAM~\cite{gtsam} library, despite the limited documentation available for its Python bindings.
 
-% mention gaps in the data
-% sequential framework - advantages, need for pose at every step
-% explain registration equations
-% explain map creation
-% describe attempts to include GPS measurements
-% - interpolation with fixed alpha
-% - combination weighted by covariances
-% describe issues - deviation, equal time steps, unable to correct past poses, when GPS is received
-% 
-% 
+An important mention is reserved to the Numba~\cite{numba} compiler library, which enabled significant performance improvements for operations on large NumPy arrays. Performing motion compensation, for example, would not be possible in real-time (\ie processing several LiDAR scans per second) in pure Python, but the just-in-time compilation provided by the Numba decorators, combined with parallel processing, alleviate this problem.
 
-%% fix dots in enumerations
-
-% Similarly, $M\left(\widehat{\mathfrak{T}}, \mathfrak{P}\right)$ represents the ground truth map.
-
-
-
-% The challenge lies in 
-
-% \begin{compactitem}
-% 	\item The trajectory described by this sequence matches the path of the system in the real world as accurately as possible
-% 	\item The full point cloud,
-% \end{compactitem}
-
-% intermediate challenge = get as good of a displacement estimate, despite the noise in the data
-
+The code is divided into modules that group similar functionality, and we followed Object-Oriented Programming principles loosely, by having classes for the main components (\eg Registration, Motion model, Graph optimization). For faster experimentation, the data structure presented in Section~\ref{sec:data-acquisition} is transformed into raw numerical form, stored on disk as \texttt{.npy} files, and re-loaded at runtime. Naturally, some custom interfacing would have to occur in order to apply the current implementation for a live robotic system, but our particular use case did not raise the need for integration with the ROS~\cite{ros2009} framework.
 
