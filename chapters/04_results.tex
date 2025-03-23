@@ -1,6 +1,8 @@
 \chapter{Results}
 \label{ch:results}
 
+\section{Evaluation metrics}
+
 \section{Parameter analysis}
 
 \subsection{Point cloud voxelization}
@@ -55,9 +57,7 @@
 % \end{figure}
 
 \subsection{Local map size}
-%% how do the results change, depending on the number of previous scans
-% test with 1, 2, 5, 10, 15
-
+%% how do the results change, depending on the number of previous scans stored
 
 \begin{table}[h]
     \centering
@@ -81,6 +81,52 @@
 
 \subsection{Registration strategy}
 %% how do the results change, depending on whether we use GICP or not
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{ccccccccc}
+        \hline
+        \textbf{GICP}    & \textbf{Median}   & \textbf{ATE}    & \textbf{ATE}  & \textbf{Final } & \textbf{Final} & \textbf{Avg.} & \textbf{Avg.}   & \textbf{Avg.}  \\
+        \textbf{Dist.}   & \textbf{Duration} & \textbf{Trans.} & \textbf{Rot.} & \textbf{Error}  & \textbf{Error} & \textbf{RMSE} & \textbf{Corr.}  & \textbf{Corr.} \\
+        \textbf{Thresh.} &                   & \textbf{}       & \textbf{}     & \textbf{Trans.} & \textbf{Rot.}  & \textbf{}     & \textbf{Trans.} & \textbf{Rot.}  \\
+        \hline \hline
+        -                & 0.2111            & 1.5284          & 0.0343        & 2.8009          & 0.0571         & 0.0601        & -               & -              \\
+        0.1              & 0.2949            & 1.0383          & 0.0261        & 1.5486          & 0.0357         & 0.0457        & 0.0070          & 0.0009         \\
+        0.2              & 0.3020            & 1.0026          & 0.0270        & 1.4442          & 0.0340         & 0.0520        & 0.0070          & 0.0009         \\
+        0.5              & 0.2860            & 1.0731          & 0.0311        & 1.4858          & 0.0390         & 0.0599        & 0.0073          & 0.0010         \\
+        \hline
+    \end{tabular}
+    \caption{Metrics for GICP Variations}
+    \label{tab:gicp_variations}
+\end{table}
+
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{Trajectory end point location.}{
+        \includegraphics[width=0.46\linewidth]{images/gicp-result-xy.pdf}
+    }
+    \hspace{1pt}
+    \subcaptionbox{Z error evolution.}{
+        \includegraphics[width=0.45\linewidth]{images/gicp-z-error.pdf}
+    }
+    \caption[]{
+    }
+    \label{fig:gicp-traj-result}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{Distribution of point entropies.}{
+        \includegraphics[width=0.46\linewidth]{images/gicp-map-entropy.pdf}
+    }
+    \hspace{1pt}
+    \subcaptionbox{Observing the Z difference in CloudCompare. Yellow - without GICP, white - with GICP.}{
+        \includegraphics[width=0.45\linewidth]{images/gicp-z-error-view.png}
+    }
+    \caption[]{
+    }
+    \label{fig:gicp-map-result}
+\end{figure}
 
 
 \section{Odometry evaluation}
