@@ -278,7 +278,7 @@ This uncovers two possible evaluation directions, which also constitute the high
 
 \subsection{Overview}
 
-The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation. \reffigbr{kiss-icp-architecture} In this approach, scans are processed one-by-one, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides a localization estimate at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffigbr{deviation-no-gps}, creating a distorted map.
+The final architecture is the result of a series of experiments. The process began with a LiDAR-only framework, immitating the KISS-ICP \cite{vizzo2023ral} implementation, shown in \reffig{kiss-icp-architecture}. In this approach, scans are processed one-by-one, attempting to compute the optimal pose at each step, and the map is built incrementally. This is computationally efficient and becomes essential when a robot operates in an unknown environment, as it provides a localization estimate at any given time. In the absence of absolute positioning information, however, this diverges from the ground-truth trajectory \reffigbr{deviation-no-gps}, creating a distorted map.
 
 \begin{figure}[h]
 	\centering
