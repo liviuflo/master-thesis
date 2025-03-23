@@ -1,12 +1,10 @@
 \chapter{Results}
 \label{ch:results}
 
-This chapter provides a quantitative and qualitative assessment of our method, by applying it to various scenarios and analysing its output.
-
-TODO write more
+This chapter provides a quantitative and qualitative assessment of our method, by applying it to various scenarios and analysing its output. We begin by formulating a set of odometry and mapping metrics, then observe how our solution behaves if some of its components are altered, and test it on multiple datasets.
 
 \section{Evaluation metrics}
-Let us first define the main metrics used for evaluation. In terms of trajectory, Zhang and Scaramuzza \cite{zhang2018tutorial} provide a description of typical metrics for visual odometry, and these also apply to the current work. Given a ground-truth pose
+Let us first define the main metrics used for evaluation. In terms of trajectory, Zhang and Scaramuzza \cite{zhang2018tutorial} provide a description of typical metrics for visual odometry, which also apply to LiDAR odometry. Given a ground-truth pose
 $\pose_i = \left( \matR_i, \vect_i\right)$ and a corresponding pose
 $\widehat{\pose}_i = \left( \widehat{\matR}_i, \widehat{\vect}_i\right)$, we can define translation and rotation errors as:
 \begin{equation}
@@ -18,13 +16,24 @@ $\widehat{\pose}_i = \left( \widehat{\matR}_i, \widehat{\vect}_i\right)$, we can
         \eqdot
     \end{aligned}
 \end{equation}
-By applying this on pose sequences, we compute the \acrfull{ate}:
+A simple way to compare two pose sequences that start at the same pose is to compute $e_{\text{trans}}(\vect_N, \widehat{\vect}_N)$ and $e_{\text{rot}}(\matR_N, \widehat{\matR}_N)$, the errors at the final state $N$. A more informative measure is given by the \acrfull{ate} \cite{kummerle2009measuring}:
 \begin{equation}
     \begin{aligned}
-        asd & = qasd
+        \text{ATE}_{\text{trans}} & = \sqrt{\frac{1}{N}\sum_{i=1}^{N} e_{\text{trans}}^2(\vect_i, \widehat{\vect}_i)} \\
+        \text{ATE}_{\text{rot}}   & = \sqrt{\frac{1}{N}\sum_{i=1}^{N} e_{\text{rot}}^2(\matR_i, \widehat{\matR}_i )}
+        \eqdot
     \end{aligned}
 \end{equation}
+In the KITTI Benchmark \cite{geiger2012kitti}, this was extended to a metric that is applied on sub-sequences of a certain length or velocity, for a detailed evaluation.
 
+Addressing one of the research questions that motivated this work, we also aim to quantify the quality of the resulting maps, to observe the improvements we bring to the GNSS-merged point cloud. Surprisingly, existing SLAM solutions rarely include rigorous map evaluation, because the map is seen as a localization-enabling tool, rather than a by-product of the system.
+The metrics here are closely related to the registration task, but differ in that they are applied on a complete 3D map, instead of a pair of point sets. We note that computing a single value for an entire point cloud is rather misleading, due to variations that appear between its regions, so we aim for point-based metrics that we analyse through a histogram or \acrfull{cdf}.
+
+A high-quality 3D map is expected to be dense, consistent, and provide high detail for observed features. A very trivial metric is the nearest-neighbor distance. Without considering degenerate cases, having a small nearest-neighbor distance is desirable, but this is constrained by the resolution of the sensor --- the distance would be small even when point clouds do not align well, if the LiDAR has high resolution.
+Alternatively, we can compute the number of points within a given radius from each point. This is a reliable measure of local density, but it is unable to distinguish between randomly-scattered points and a structured region.
+Inspired by the point-to-plane distance (Eq.~\ref{eq:p2plane}), we can compute a metric that measures the deviation of each point from the surface determined by its neighborhood. To avoid noise, we evaluate this for regions that have a high chance of representing plane surfaces, using normal consistency $c$.
+If $\vecx{n}$ and \mbox{$\left\{\vecx{n}_1, \dots \vecx{n}_k\right\}$} are the normals of a point and its neighbors, then
+\mbox{$c = \modulus{\transpose{\vecx{n}} \frac{1}{k}\sum_{i \in (1, k)} \vecx{n}_i}$}.
 
 % Given a set of ground-truth poses
 % \mbox{$\mathcal{T} = \left\{ \pose_i \in \SE{3} : \pose_i = \left( \matR_i, \vect_i\right)\right\}$}, and a corresponding set of predicted poses

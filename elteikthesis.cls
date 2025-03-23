@@ -352,6 +352,8 @@
 
 \newcommand{\normtwo}[1]{\left|\left|{#1}\right|\right|_2}
 \newcommand{\normm}[1]{\left|\left|{#1}\right|\right|}
+\newcommand{\modulus}[1]{\left|{#1}\right|}
+
 
 \newcommand{\eg}{e.g., }
 \newcommand{\ie}{i.e., }

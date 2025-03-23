@@ -629,6 +629,7 @@ Given a transformation estimate $\pose = \left(\matR, \vect\right)$, we have:
 This is a computationally-efficient approach, but is more sensitive to noise and outliers compared to the alternatives, and it does not take into account any geometrical features of the point clouds. To improve this, a point-to-plane metric \cite{chen1991pointtoplane} can be used, which considers the unit surface normal $\normalq$ computed at $\pointq$:
 
 \begin{equation}
+	\label{eq:p2plane}
 	\distxpq{2} = \left(\transpose{\normalq}\left(\distpq\right)\right)^2
 	\eqdot
 \end{equation}
