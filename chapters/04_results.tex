@@ -2,6 +2,8 @@
 \label{ch:results}
 
 \section{Parameter analysis}
+
+\subsection{Point cloud voxelization}
 \begin{table}[h]
     \centering
     \begin{tabular}{|c|c|c|c|c|c|c|c|c|}
@@ -19,28 +21,50 @@
         0.6            & 0.1635            & 1.6171          & 0.0444        & 3.7190          & 0.0677         & 0.2186        & 0.1069          & 0.0116         \\
         \hline
     \end{tabular}
-    \caption{Performance metrics for different voxel sizes.}
+    \caption{Metrics for varying voxel sizes.}
     \label{tab:voxel_metrics}
 \end{table}
 
-
 \begin{figure}[h]
     \centering
-    \subcaptionbox{Translation corrections.}{
-        \includegraphics[width=0.46\linewidth]{images/gicp_corrections_trans.pdf}
+    \subcaptionbox{Distribution of point entropies.}{
+        \includegraphics[width=0.45\linewidth]{images/voxel-size-entropy.pdf}
     }
     \hspace{1pt}
-    \subcaptionbox{Rotation corrections.}{
-        \includegraphics[width=0.45\linewidth]{images/gicp_corrections_rot.pdf}
+    \subcaptionbox{Visual comparison. }{
+        \includegraphics[width=0.47\linewidth]{images/voxel-size-comp.png}
     }
-    \caption[]{
-    }
+    \caption[Voxel size effect on map quality]{Voxel size effect on map quality.}
     \label{fig:gicp-corrections}
 \end{figure}
 
-\section{Trajectory evaluation}
 
-\section{Map evaluation}
+
+% \begin{figure}[h]
+%     \centering
+%     \subcaptionbox{Translation corrections.}{
+%         \includegraphics[width=0.46\linewidth]{images/gicp_corrections_trans.pdf}
+%     }
+%     \hspace{1pt}
+%     \subcaptionbox{Rotation corrections.}{
+%         \includegraphics[width=0.45\linewidth]{images/gicp_corrections_rot.pdf}
+%     }
+%     \caption[]{
+%     }
+%     \label{fig:gicp-corrections}
+% \end{figure}
+
+\subsection{Local mapping}
+%% how do the results change, depending on the number of previous scans
+% test with 1, 2, 5, 10, 15
+
+\subsection{Registration strategy}
+%% how do the results change, depending on whether we use GICP or not
+
+
+\section{Odometry evaluation}
+
+\section{Mapping evaluation}
 
 \section{KITTI results}
 
