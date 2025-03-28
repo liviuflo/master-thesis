@@ -31,9 +31,18 @@ The metrics here are closely related to the registration task, but differ in tha
 
 A high-quality 3D map is expected to be dense, consistent, and provide high detail for observed features. A very trivial metric is the nearest-neighbor distance. Without considering degenerate cases, having a small nearest-neighbor distance is desirable, but this is constrained by the resolution of the sensor --- the distance would be small even when point clouds do not align well, if the LiDAR has high resolution.
 Alternatively, we can compute the number of points within a given radius from each point. This is a reliable measure of local density, but it is unable to distinguish between randomly-scattered points and a structured region.
-Inspired by the point-to-plane distance (Eq.~\ref{eq:p2plane}), we can compute a metric that measures the deviation of each point from the surface determined by its neighborhood. To avoid noise, we evaluate this for regions that have a high chance of representing planar surfaces, using normal consistency $c$.
+Inspired by the point-to-plane distance (Eq.~\ref{eq:p2plane}), we can compute a metric that measures the deviation of each point from the surface determined by its neighborhood. To avoid noise, we evaluate this for regions that have a high chance of representing planar surfaces, indicated by the normal consistency $c$.
 If $\vecx{n}$ and \mbox{$\left\{\vecx{n}_1, \dots \vecx{n}_k\right\}$} are the normals of a point and its neighbors, then
 \mbox{$c = \modulus{\transpose{\vecx{n}} \frac{1}{k}\sum_{i \in (1, k)} \vecx{n}_i}$}.
+
+\newcommand{\pk}{\vecx{p}_k}
+Another useful metric is given by point entropy, as described in \cite{adolfsson2021coral}. Considering all points within a radius $r$ around point $\pk$, we compute the covariance $\matx{\Sigma}(\pk)$, then derive the differential entropy as:
+\begin{equation}
+    h(\pk) = \frac{1}{2}\text{ln}\left(
+    2\pi e \text{det}\left(\matx{\Sigma}(\pk)\right)
+    \right)
+\end{equation}
+Adjusting the neighborhood radius controls the granularity of the metric, with a value around 0.2m providing a fair trade-off between detail level and computational cost.
 
 % Given a set of ground-truth poses
 % \mbox{$\mathcal{T} = \left\{ \pose_i \in \SE{3} : \pose_i = \left( \matR_i, \vect_i\right)\right\}$}, and a corresponding set of predicted poses
@@ -45,7 +54,10 @@ If $\vecx{n}$ and \mbox{$\left\{\vecx{n}_1, \dots \vecx{n}_k\right\}$} are the n
 
 \section{Parameter analysis}
 
+In this section we discuss some of the main parameters of our method, in order to better understand their effect on performance, trajectory estimation and final map quality.
 \subsection{Point cloud voxelization}
+Following the motion compensation applied during dataset pre-processing, every input point cloud undergoes a voxelization step (as described in Section~\ref{subsec:registration}) designed to reduce sensor noise while keeping a sufficient amount of information for registration. We select a subsection of the trajectory consisting of 1000 LiDAR scans and execute the pipeline in LiDAR-only mode (disregarding the GNSS information), with multiple voxel size values. As there are not GPS constraints, the graph optimization step does not modify the pose priors computed by LiDAR odometry. The corresponding GPS trajectory is treated as ground-truth, due to its low uncertainty. The results of this evaluation are presented in Table~\ref{tab:voxel_metrics}. Using a larger voxel size decreases the computational cost, as the point clouds involved have smaller resolution, but introduces considerable problems for odometry estimation, as indicated by the ATE values. We also evaluate the resulting maps, to confirm that a small voxel size leads to higher-quality mapping, as shown in \reffig{voxel-size-mapping}.
+
 \begin{table}[h]
     \centering
     \begin{tabular}{c|cccccccc}
@@ -63,7 +75,7 @@ If $\vecx{n}$ and \mbox{$\left\{\vecx{n}_1, \dots \vecx{n}_k\right\}$} are the n
         0.6            & 0.1635            & 1.9237          & 0.0475        & 3.7190          & 0.0677         & 0.2186        & 0.1069          & 0.0116         \\
         \hline
     \end{tabular}
-    \caption{Metrics for varying voxel sizes.}
+    \caption{Metrics for varying voxel sizes. Median duration (s) refers to the real time required per input scan, when executed on an Intel Core i7-10750H CPU. We also show average RMSE values (after registration) along the trajectory, alongside the average correction computed by the GICP registration, following the ICP alignment. Translation values are in meters, and rotation values in radians.}
     \label{tab:voxel_metrics}
 \end{table}
 
@@ -77,7 +89,7 @@ If $\vecx{n}$ and \mbox{$\left\{\vecx{n}_1, \dots \vecx{n}_k\right\}$} are the n
         \includegraphics[width=0.47\linewidth]{images/voxel-size-comp.png}
     }
     \caption[Voxel size effect on map quality]{Voxel size effect on map quality.}
-    \label{fig:gicp-corrections}
+    \label{fig:voxel-size-mapping}
 \end{figure}
 
 
