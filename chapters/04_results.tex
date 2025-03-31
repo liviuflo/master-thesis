@@ -44,6 +44,8 @@ Another useful metric is given by point entropy, as described in \cite{adolfsson
 \end{equation}
 Adjusting the neighborhood radius controls the granularity of the metric, with a value around 0.2m providing a fair trade-off between detail level and computational cost.
 
+To assess computational performance, we provide the processing duration (s) indicating the real time taken for a single input scan, without considering pre-processing operations, when executed on an Intel Core i7-10750H CPU.
+
 % Given a set of ground-truth poses
 % \mbox{$\mathcal{T} = \left\{ \pose_i \in \SE{3} : \pose_i = \left( \matR_i, \vect_i\right)\right\}$}, and a corresponding set of predicted poses
 % \mbox{$
@@ -56,7 +58,7 @@ Adjusting the neighborhood radius controls the granularity of the metric, with a
 
 In this section we discuss some of the main parameters of our method, in order to better understand their effect on performance, trajectory estimation and final map quality.
 \subsection{Point cloud voxelization}
-Following the motion compensation applied during dataset pre-processing, every input point cloud undergoes a voxelization step (as described in Section~\ref{subsec:registration}) designed to reduce sensor noise while keeping a sufficient amount of information for registration. We select a subsection of the trajectory consisting of 1000 LiDAR scans and execute the pipeline in LiDAR-only mode (disregarding the GNSS information), with multiple voxel size values. As there are not GPS constraints, the graph optimization step does not modify the pose priors computed by LiDAR odometry. The corresponding GPS trajectory is treated as ground-truth, due to its low uncertainty. The results of this evaluation are presented in Table~\ref{tab:voxel_metrics}. Using a larger voxel size decreases the computational cost, as the point clouds involved have smaller resolution, but introduces considerable problems for odometry estimation, as indicated by the ATE values. We also evaluate the resulting maps, to confirm that a small voxel size leads to higher-quality mapping, as shown in \reffig{voxel-size-mapping}.
+Following the motion compensation applied during dataset pre-processing, every input point cloud undergoes a voxelization step (as described in Section~\ref{subsec:registration}) designed to reduce sensor noise while keeping a sufficient amount of information for registration. We select a subsection of the trajectory consisting of 1000 LiDAR scans and execute the pipeline in LiDAR-only mode (disregarding the GNSS information), with multiple voxel size values. As there are no GPS constraints, the graph optimization step does not modify the pose priors computed by LiDAR odometry. The corresponding GPS trajectory is treated as ground-truth, due to its low uncertainty. The results of this evaluation are presented in Table~\ref{tab:voxel_metrics}. Using a larger voxel size decreases the computational cost, as the point clouds involved have smaller resolution, but introduces considerable problems for odometry estimation, as indicated by the ATE values. We also look at the resulting maps, to confirm that a small voxel size leads to higher-quality mapping, as shown in \reffig{voxel-size-mapping}.
 
 \begin{table}[h]
     \centering
@@ -75,7 +77,7 @@ Following the motion compensation applied during dataset pre-processing, every i
         0.6            & 0.1635            & 1.9237          & 0.0475        & 3.7190          & 0.0677         & 0.2186        & 0.1069          & 0.0116         \\
         \hline
     \end{tabular}
-    \caption{Metrics for varying voxel sizes. Median duration (s) refers to the real time required per input scan, when executed on an Intel Core i7-10750H CPU. We also show average RMSE values (after registration) along the trajectory, alongside the average correction computed by the GICP registration, following the ICP alignment. Translation values are in meters, and rotation values in radians.}
+    \caption{Metrics for varying voxel sizes. We also show average RMSE values (after registration), alongside the average correction computed by the GICP registration, following the ICP alignment. Translation values are in meters, and rotation values in radians. The duration does not necessarily the voxel size, because more ICP iterations are required for the registration}
     \label{tab:voxel_metrics}
 \end{table}
 
@@ -110,6 +112,9 @@ Following the motion compensation applied during dataset pre-processing, every i
 
 \subsection{Local map size}
 %% how do the results change, depending on the number of previous scans stored
+
+Next, we observe the behavior of the algorithm in relation to the size of the local map, \ie the number of previous scans that the registration is performed against. Given the high frequency and operational range of the sensor, consecutive scans have large overlapping areas which represent useful cues for point cloud alignment. This is proven by the low odometry errors obtained for map size $\geq 5$ in Table~\ref{tab:map_sizes}. As larger maps are used, the computational time increases, but without significant improvements for trajectory estimation.
+
 
 \begin{table}[h]
     \centering
