@@ -734,7 +734,7 @@ and set $\covicp = r \cdot \covicp^{*}$. Here, $\sigma_e$ represents the standar
 
 Following multiple experiments, we arrived at a procedure that can account for poor initialization and scene noise, while ensuring high-quality alignment between the current scan and the existing map. This is a two-step process, mimicking a coarse-to-fine registration procedure. Let $M, S$ be the map and current scan point clouds, respectively, and $v(P, \alpha)$ a voxelization function that downsamples point cloud $P$ using voxel size $\alpha$ (in meters). First, we perform robust point-to-point ICP between $v(S, 0.2)$ and $v(M, 0.4)$, using the motion prediction pose for initialization. The correspondence set is trimmed at the 70th percentile, and the number of iterations in the ICP procedure is not constrained, but we halt when the norm of the estimated $\xi$ is below a small threshold ($10^{-4}$).
 
-The resulting pose is used to intialize a dense registration stage: $v(S, 0.1)$ is aligned with $v(M, 0.1)$ using Generalized ICP, for at most 100 iterations. In both cases, we use a distance threshold of 0.5m, to account for corrections even in sparser areas of the point cloud (\eg at the edges).
+The resulting pose is used to intialize a dense registration stage: $v(S, 0.1)$ is aligned with $v(M, 0.1)$ using \acrfull{gicp}, for at most 100 iterations. In both cases, we use a distance threshold of 0.5m, to account for corrections even in sparser areas of the point cloud (\eg at the edges).
 
 \subsection{Map Handling}
 
