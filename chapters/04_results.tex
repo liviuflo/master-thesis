@@ -227,8 +227,8 @@ The first odometry evaluation we perform is on the trajectory recorded with the 
                        & \textbf{tra.}                      & \textbf{rot.}                       & \textbf{tra.}              & \textbf{rot.}               & \textbf{tra.}                         & \textbf{rot.} & \textbf{tra.} & \textbf{rot.} & \textbf{tra.} & \textbf{rot.} \\
         \hline
         \hline
-        \textbf{K-ICP} & 46.879                             & 0.407                               & 65.965                     & 0.688                       & 3.717                                 & 28.885        & 1.953         & 17.314        & 3.047         & 17.489        \\
-        \textbf{Ours}  & 8.232                              & 0.102                               & 1.311                      & 0.095                       & 2.814                                 & 16.673        & 1.357         & 10.879        & 1.152         & 11.275        \\
+        \textbf{K-ICP} & 46.879                             & 0.407                               & 65.965                     & 0.688                       & 3.72                                  & 28.89         & 1.95          & 17.31         & 3.05          & 17.49         \\
+        \textbf{Ours}  & 8.232                              & 0.102                               & 1.311                      & 0.095                       & 2.81                                  & 16.67         & 1.36          & 10.88         & 1.15          & 11.28         \\
         \hline
     \end{tabular}
     \caption{Comparison with KISS-ICP \cite{vizzo2023ral} on custom trajectory. We report RTE~(\%) for sub-sequences of various lengths ($k$ is the number of LiDAR scans). }
@@ -253,19 +253,25 @@ We also evaluate on the sequences of the KITTI dataset \cite{geiger2013vision} w
 
     \item Use a larger base voxel size: as the scanned environment is larger, we use a default voxel size of 0.2m instead of 0.1m
 \end{compactitem}
+The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
 
 \begin{table}[h]
     \centering
-    \begin{tabular}{c|c|cc|cc|cccc}
+    \begin{tabular}{c|c|ccc|cc|cccc}
         \hline
-                      &                 &                                   &                                     &                            &                             & \textbf{}     & \multicolumn{2}{c}{\textbf{Avg. RTE}} &                               \\
-        \textbf{Seq.} & \textbf{}       & \multicolumn{2}{c|}{\textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c}{$k=100$}                                                                                         \\
-        \textbf{no.}  & \textbf{Length} & \textbf{tra.}                     & \textbf{rot.}                       & \textbf{tra.}              & \textbf{rot.}               & \textbf{tra.} & \multicolumn{1}{c|}{\textbf{rot.}}    & \textbf{tra.} & \textbf{rot.} \\ \hline \hline
-        00            &                 &                                   &                                     &                            &                             &               &                                       &               &               \\
+                      &                 &                                   &                                     &                            &                             &               & \textbf{}     & \multicolumn{2}{c}{\textbf{Avg. RTE}} &                               \\
+        \textbf{Seq.} & \textbf{}       & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c}{$k=100$}                                                                                                         \\
+        \textbf{no.}  & \textbf{Length} & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}              & \textbf{tra.}               & \textbf{rot.} & \textbf{tra.} & \multicolumn{1}{c|}{\textbf{rot.}}    & \textbf{tra.} & \textbf{rot.} \\ \hline \hline
+        00            & 3723.24         & 7.29                              & 16.28                               & 0.07                       & 11.58                       & 0.06          & 3.0           & 21.01                                 & 1.19          & 11.71         \\
+        01            & 2453.26         & 24.53                             & 190.1                               & 0.21                       & 291.51                      & 0.3           & 1.6           & 37.07                                 & 1.95          & 55.96         \\
+        02            & 5067.02         & 22.2                              & 50.39                               & 0.13                       & 99.53                       & 0.22          & 2.17          & 19.95                                 & 1.2           & 12.24         \\
+        03            & 560.85          & 2.92                              & 8.84                                & 0.05                       & 18.15                       & 0.08          & 2.87          & 18.26                                 & 0.83          & 7.69          \\
+        04            & 393.65          & 0.72                              & 4.98                                & 0.03                       & 11.76                       & 0.06          & 1.3           & 33.69                                 & 1.15          & 271.49        \\
+        05            & 2205.2          & 4.62                              & 6.92                                & 0.04                       & 13.79                       & 0.07          & 4.4           & 22.89                                 & 0.89          & 21.12         \\ \hline
     \end{tabular}
-    \caption{Odometry evaluation on KITTI sequences.}
+    \caption{Odometry evaluation on KITTI sequences. We also report the XY-only ATE value, to emphasize localization performance.}
+    \label{tab:odom-kitti}
 \end{table}
-
 
 % raw odometry on our data
 % raw odometry on KITTI
