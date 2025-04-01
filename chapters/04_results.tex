@@ -24,7 +24,19 @@ A simple way to compare two pose sequences that start at the same pose is to com
         \eqdot
     \end{aligned}
 \end{equation}
-In the KITTI Benchmark \cite{geiger2012kitti}, this was extended to a metric that is applied on sub-sequences of a certain length or velocity, for a detailed evaluation.
+In the KITTI Benchmark \cite{geiger2012kitti}, this was extended to \acrfull{rte}, a metric that is applied on sub-sequences of a certain length or velocity, for a detailed evaluation. Given a sub-sequence $(i,j)$, we compute
+$\vect_{i,j} = \transpose{\matR_i}(\vect_j - \vect_i)$
+and
+$\matR_{i,j} = \transpose{\matR_i}\matR_j$,
+then derive the relative error, as a percentage, using:
+\begin{equation}
+    \begin{aligned}
+        \text{RTE}_{\text{trans}} & =
+        \frac{e_{\text{trans}}(\vect_{i,j}, \widehat{\vect}_{i,j})}{\normtwo{\vect_{i,j}}} \cdot 100                  \\
+        \text{RTE}_{\text{rot}}   & =\frac{
+            e_{\text{rot}}(\matR_{i,j}, \widehat{\matR}_{i,j} ) }{\normtwo{\Logmap{\matR_{i,j}}}} \cdot 100    \eqdot \\
+    \end{aligned}
+\end{equation}
 
 Addressing one of the research questions that motivated this work, we also aim to quantify the quality of the resulting maps, to observe the improvements we bring to the GNSS-merged point cloud. Surprisingly, existing SLAM solutions rarely include rigorous map evaluation, because the map is seen as a localization-enabling tool, rather than a by-product of the system.
 The metrics here are closely related to the registration task, but differ in that they are applied on a complete 3D map, instead of a pair of point sets. We note that computing a single value for an entire point cloud is rather misleading, due to variations that appear between its regions, so we aim for point-based metrics that we analyse through a histogram or \acrfull{cdf}.
@@ -77,7 +89,7 @@ Following the motion compensation applied during dataset pre-processing, every i
         0.6            & 0.1635            & 1.9237          & 0.0475        & 3.7190          & 0.0677         & 0.2186        & 0.1069          & 0.0116         \\
         \hline
     \end{tabular}
-    \caption{Metrics for varying voxel sizes. We also show average RMSE values (after registration), alongside the average correction computed by the GICP registration, following the ICP alignment. Translation values are in meters, and rotation values in radians. The duration does not necessarily the voxel size, because more ICP iterations are required for the registration}
+    \caption{Metrics for varying voxel sizes. We also report average RMSE values (after registration), alongside the average correction computed by the GICP registration, following the ICP alignment. Translation values are in meters, and rotation values in radians. The duration does not directly depend on the voxel size, because more ICP iterations are required for registration, when a larger voxel size is used.}
     \label{tab:voxel_metrics}
 \end{table}
 
@@ -190,6 +202,39 @@ We also assess the influence of the Generalized ICP registration step. During th
 
 
 \section{Odometry evaluation}
+
+The first odometry evaluation we perform is on the trajectory recorded with the \mbox{SDX-Compact} system, depicted in \reffig{odom-traj}. Because we consider scan timestamps during motion prediction, we are able to handle large ``jumps'' in the scan sequence \reffigbr{odom-jumps}, something that other methods struggle with. Quantitative results are presented in Table~\ref{tab:custom-traj-results}.
+
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{Full trajectory comparison.}{
+        \includegraphics[width=0.445\linewidth]{images/eval_traj/traj.pdf}
+    }
+    \hspace{1pt}
+    \subcaptionbox{A troublesome region with time jumps. \label{fig:odom-jumps}}{
+        \includegraphics[width=0.485\linewidth]{images/eval_traj/loop.pdf}
+    }
+    \caption[Odometry evaluation on custom trajectory]{Odometry evaluation on custom trajectory: our method and KISS-ICP \cite{vizzo2023ral} against GPS data.}
+    \label{fig:odom-traj}
+\end{figure}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{c|cc|cc|cc|cc|cc}
+        \hline
+                       &                                    &                                     &                            &                             & \multicolumn{6}{c}{\textbf{Avg. RTE}}                                                                                 \\
+                       & \multicolumn{2}{c|}{ \textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c|}{$k=10$} & \multicolumn{2}{c}{$k=100$}                                                                                           \\
+                       & \textbf{tra.}                      & \textbf{rot.}                       & \textbf{tra.}              & \textbf{rot.}               & \textbf{tra.}                         & \textbf{rot.} & \textbf{tra.} & \textbf{rot.} & \textbf{tra.} & \textbf{rot.} \\
+        \hline
+        \hline
+        \textbf{K-ICP} & 46.879                             & 0.407                               & 65.965                     & 0.688                       & 3.717                                 & 28.885        & 1.953         & 17.314        & 3.047         & 17.489        \\
+        \textbf{Ours}  & 8.232                              & 0.102                               & 1.311                      & 0.095                       & 2.814                                 & 16.673        & 1.357         & 10.879        & 1.152         & 11.275        \\
+        \hline
+    \end{tabular}
+    \caption{Odometry evaluation on custom trajectory. We report RTE values in \% for sub-sequences of various lengths ($k$ is the number of LiDAR scans). }
+    \label{tab:custom-traj-results}
+\end{table}
+
 
 % raw odometry on our data
 % raw odometry on KITTI
