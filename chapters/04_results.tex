@@ -139,7 +139,7 @@ Next, we observe the behavior of the algorithm in relation to the size of the lo
 \subsection{Registration strategy}
 %% how do the results change, depending on whether we use GICP or not
 
-We also assess the influence of the Generalized ICP registration step. During the experimental phase, we observed that this has a very positive effect on accurately matching the ground plane, and this is confirmed by the metrics in Table~\ref{tab:gicp_variations}. For a more thorough analysis, we show the results corresponding to several distance threshold values, and compare against the case where only robust ICP is used.
+We also assess the influence of the Generalized ICP registration step. During the experimental phase, we observed that this has a very positive effect on accurately matching the ground plane, and this is confirmed by the metrics in Table~\ref{tab:gicp_variations}. For a more thorough analysis, we show the results corresponding to several distance threshold values, and compare against the case where only point-to-point ICP is used. The no-GICP version leads to higher trajectory errors overall, but we note that the Z component (height) has the highest contribution to this error. The XY error is smaller when GICP is not used \reffigbr{gicp-result-xy}, but the Z error is almost doubled \reffigbr{gicp-z-error}. In terms of map quality, using GICP clearly helps reduce point entropies and point-to-plane errors, so the surfaces of the output map capture more details, but additional constraints (\ie GPS) will help prevent drifts.
 
 \begin{table}[h]
     \centering
@@ -155,21 +155,20 @@ We also assess the influence of the Generalized ICP registration step. During th
         0.5              & 0.2860            & 1.1958          & 0.0326        & 1.4858          & 0.0390         & 0.0599        & 0.0073          & 0.0010         \\
         \hline
     \end{tabular}
-    \caption{Metrics for GICP Variations}
+    \caption{Metrics for GICP variations.}
     \label{tab:gicp_variations}
 \end{table}
 
 \begin{figure}[h]
     \centering
-    \subcaptionbox{Trajectory end point location.}{
+    \subcaptionbox{Trajectory end point location. \label{fig:gicp-result-xy}}{
         \includegraphics[width=0.46\linewidth]{images/gicp-result-xy.pdf}
     }
     \hspace{1pt}
-    \subcaptionbox{Z error evolution.}{
+    \subcaptionbox{Z error evolution.\label{fig:gicp-z-error}}{
         \includegraphics[width=0.45\linewidth]{images/gicp-z-error.pdf}
     }
-    \caption[]{
-    }
+    \caption[Trajectory evaluation with and without GICP]{Trajectory evaluation with and without GICP.}
     \label{fig:gicp-traj-result}
 \end{figure}
 
@@ -179,20 +178,32 @@ We also assess the influence of the Generalized ICP registration step. During th
         \includegraphics[width=0.46\linewidth]{images/gicp-map-entropy.pdf}
     }
     \hspace{1pt}
-    \subcaptionbox{Observing the Z difference in CloudCompare. Yellow - without GICP, white - with GICP.}{
-        \includegraphics[width=0.45\linewidth]{images/gicp-z-error-view.png}
+    \subcaptionbox{Point-to-plane errors (first 20 scans)}{
+        \includegraphics[width=0.45\linewidth]{images/gicp-p2plane.pdf}
     }
-    \caption[]{
-    }
+    % \subcaptionbox{Observing the Z difference in CloudCompare. Yellow - without GICP, white - with GICP.}{
+    %     \includegraphics[width=0.45\linewidth]{images/gicp-z-error-view.png}
+    % }
+    \caption[Map evaluation with and without GICP]{Map evaluation with and without GICP.}
     \label{fig:gicp-map-result}
 \end{figure}
 
 
 \section{Odometry evaluation}
 
+% raw odometry on our data
+% raw odometry on KITTI
+
+% using noisy gps on our data
+% using noisy gps on KITTI data
+
+% using less gps on our data
+% using less gps on KITTI data
+
+
 \section{Mapping evaluation}
 
-\section{KITTI results}
+% \section{KITTI results}
 
 % Things worth mentioning
 % - execution time
