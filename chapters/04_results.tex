@@ -247,15 +247,32 @@ The first odometry evaluation we perform is on the trajectory recorded with the 
     \caption[Position analysis on custom trajectory]{Position analysis on custom trajectory. }
     \label{fig:xyz-traj}
 \end{figure}
+We also evaluate on the sequences of the KITTI dataset \cite{geiger2013vision} which include ground-truth pose values from a GPS + IMU sensor system. This is a popular benchmark for urban SLAM problems, and it represents an interesting challenge for our solution because it uses a different LiDAR sensor (Velodyne HDL-64E), the environment is different, and moving vehicles are present. To operate on this dataset, we adjust the solution as follows:
+\begin{compactitem}
+    \item Discard LiDAR points that are farther than 50m or closer than 1m, to avoid high distortion and points belonging to the sensor rig
+
+    \item Use a larger base voxel size: as the scanned environment is larger, we use a default voxel size of 0.2m instead of 0.1m
+\end{compactitem}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{c|c|cc|cc|cccc}
+        \hline
+                      &                 &                                   &                                     &                            &                             & \textbf{}     & \multicolumn{2}{c}{\textbf{Avg. RTE}} &                               \\
+        \textbf{Seq.} & \textbf{}       & \multicolumn{2}{c|}{\textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c}{$k=100$}                                                                                         \\
+        \textbf{no.}  & \textbf{Length} & \textbf{tra.}                     & \textbf{rot.}                       & \textbf{tra.}              & \textbf{rot.}               & \textbf{tra.} & \multicolumn{1}{c|}{\textbf{rot.}}    & \textbf{tra.} & \textbf{rot.} \\ \hline \hline
+        00            &                 &                                   &                                     &                            &                             &               &                                       &               &               \\
+    \end{tabular}
+    \caption{Odometry evaluation on KITTI sequences.}
+\end{table}
+
 
 % raw odometry on our data
 % raw odometry on KITTI
 
 % using noisy gps on our data
-% using noisy gps on KITTI data
 
 % using less gps on our data
-% using less gps on KITTI data
 
 
 \section{Mapping evaluation}
