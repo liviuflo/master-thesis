@@ -24,7 +24,7 @@ A simple way to compare two pose sequences that start at the same pose is to com
         \eqdot
     \end{aligned}
 \end{equation}
-In the KITTI Benchmark \cite{geiger2012kitti}, this was extended to \acrfull{rte}, a metric that is applied on sub-sequences of a certain length or velocity, for a detailed evaluation. Given a sub-sequence $(i,j)$, we compute
+We compute this after transforming the ground truth and predicted trajectories such that they begin with $\pose_0 = \matx{I}_4$. In the KITTI Benchmark \cite{geiger2012kitti}, this was extended to \acrfull{rte}, a metric that is applied on sub-sequences of a certain length or velocity, for a detailed evaluation. Given a sub-sequence $(i,j)$, we compute
 $\vect_{i,j} = \transpose{\matR_i}(\vect_j - \vect_i)$
 and
 $\matR_{i,j} = \transpose{\matR_i}\matR_j$,
@@ -257,25 +257,41 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
 
 \begin{table}[h]
     \centering
-    \begin{tabular}{c|c|ccc|cc|cccc}
+    % \begin{tabular}{c|c|ccc|cc|cccc}
+    %     \hline
+    %                   &                 &                                   &                                     &                            &                             &               & \textbf{}     & \multicolumn{2}{c}{\textbf{Avg. RTE}} &                               \\
+    %     \textbf{Seq.} & \textbf{}       & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c}{$k=100$}                                                                                                         \\
+    %     \textbf{no.}  & \textbf{Length} & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}              & \textbf{tra.}               & \textbf{rot.} & \textbf{tra.} & \multicolumn{1}{c|}{\textbf{rot.}}    & \textbf{tra.} & \textbf{rot.} \\ \hline \hline
+    %     00            & 3723.24         & 7.29                              & 16.28                               & 0.07                       & 11.58                       & 0.06          & 3.0           & 21.01                                 & 1.19          & 11.71         \\
+    %     01            & 2453.26         & 24.53                             & 190.1                               & 0.21                       & 291.51                      & 0.3           & 1.6           & 37.07                                 & 1.95          & 55.96         \\
+    %     02            & 5067.02         & 22.2                              & 50.39                               & 0.13                       & 99.53                       & 0.22          & 2.17          & 19.95                                 & 1.2           & 12.24         \\
+    %     03            & 560.85          & 2.92                              & 8.84                                & 0.05                       & 18.15                       & 0.08          & 2.87          & 18.26                                 & 0.83          & 7.69          \\
+    %     04            & 393.65          & 0.72                              & 4.98                                & 0.03                       & 11.76                       & 0.06          & 1.3           & 33.69                                 & 1.15          & 271.49        \\
+    %     05            & 2205.2          & 4.62                              & 6.92                                & 0.04                       & 13.79                       & 0.07          & 4.4           & 22.89                                 & 0.89          & 21.12         \\ \hline
+    % \end{tabular}
+    \begin{tabular}{c|c|ccc|ccc|ccc}
         \hline
-                      &                 &                                   &                                     &                            &                             &               & \textbf{}     & \multicolumn{2}{c}{\textbf{Avg. RTE}} &                               \\
-        \textbf{Seq.} & \textbf{}       & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c}{$k=100$}                                                                                                         \\
-        \textbf{no.}  & \textbf{Length} & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}              & \textbf{tra.}               & \textbf{rot.} & \textbf{tra.} & \multicolumn{1}{c|}{\textbf{rot.}}    & \textbf{tra.} & \textbf{rot.} \\ \hline \hline
-        00            & 3723.24         & 7.29                              & 16.28                               & 0.07                       & 11.58                       & 0.06          & 3.0           & 21.01                                 & 1.19          & 11.71         \\
-        01            & 2453.26         & 24.53                             & 190.1                               & 0.21                       & 291.51                      & 0.3           & 1.6           & 37.07                                 & 1.95          & 55.96         \\
-        02            & 5067.02         & 22.2                              & 50.39                               & 0.13                       & 99.53                       & 0.22          & 2.17          & 19.95                                 & 1.2           & 12.24         \\
-        03            & 560.85          & 2.92                              & 8.84                                & 0.05                       & 18.15                       & 0.08          & 2.87          & 18.26                                 & 0.83          & 7.69          \\
-        04            & 393.65          & 0.72                              & 4.98                                & 0.03                       & 11.76                       & 0.06          & 1.3           & 33.69                                 & 1.15          & 271.49        \\
-        05            & 2205.2          & 4.62                              & 6.92                                & 0.04                       & 13.79                       & 0.07          & 4.4           & 22.89                                 & 0.89          & 21.12         \\ \hline
+                      &                 & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c|}{\textbf{Final}} & \multicolumn{3}{c}{\textbf{Avg. RTE} (100m)}                                                                                             \\
+        \textbf{Seq.} & \textbf{Length} & \textbf{XY}                       & \textbf{Tra.}                       & \textbf{Rot.}                                & \textbf{XY} & \textbf{Tra.} & \textbf{Rot.} & \textbf{XY} & \textbf{Tra.} & \textbf{Rot.} \\
+        \hline \hline
+        00            & 3723.24         & 7.29                              & 16.28                               & 0.07                                         & 10.59       & 11.58         & 0.06          & 0.81        & 1.23          & 12.88         \\
+        01            & 2453.26         & 24.53                             & 190.1                               & 0.21                                         & 39.9        & 291.51        & 0.3           & 0.98        & 1.31          & 45.7          \\
+        02            & 5067.02         & 22.2                              & 50.39                               & 0.13                                         & 49.72       & 99.53         & 0.22          & 0.7         & 1.22          & 11.99         \\
+        03            & 560.85          & 2.92                              & 8.84                                & 0.05                                         & 6.35        & 18.15         & 0.08          & 0.57        & 0.67          & 7.69          \\
+        04            & 393.65          & 0.72                              & 4.98                                & 0.03                                         & 1.16        & 11.76         & 0.06          & 0.39        & 0.89          & 125.81        \\
+        05            & 2205.2          & 4.62                              & 6.92                                & 0.04                                         & 9.2         & 13.79         & 0.07          & 0.5         & 1.02          & 20.44         \\
+        06            & 1232.69         & 2.03                              & 3.78                                & 0.03                                         & 4.88        & 8.79          & 0.05          & 0.59        & 0.91          & 54.07         \\
+        07            & 694.39          & 0.5                               & 1.8                                 & 0.02                                         & 0.96        & 1.36          & 0.02          & 0.58        & 1.0           & 5.12          \\
+        08            & 3222.02         & 16.73                             & 28.33                               & 0.08                                         & 20.9        & 33.15         & 0.11          & 1.04        & 1.52          & 24.66         \\
+        09            & 1704.96         & 6.12                              & 14.12                               & 0.06                                         & 9.28        & 9.78          & 0.04          & 0.68        & 1.03          & 8.1           \\
+        10            & 919.4           & 3.94                              & 18.8                                & 0.07                                         & 4.61        & 21.78         & 0.09          & 0.65        & 1.04          & 8.79          \\
+        \hline
     \end{tabular}
-    \caption{Odometry evaluation on KITTI sequences. We also report the XY-only ATE value, to emphasize localization performance.}
+    \caption{Odometry evaluation on KITTI sequences. We report the XY-only error values to emphasize localization performance. RTE values are reported in \%, averaged over all 100m sub-sequences.}
     \label{tab:odom-kitti}
 \end{table}
 
-% raw odometry on our data
-% raw odometry on KITTI
-
+\section{GPS-integrated evaluation}
 % using noisy gps on our data
 
 % using less gps on our data
