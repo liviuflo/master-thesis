@@ -250,7 +250,6 @@ The first odometry evaluation we perform is on the trajectory recorded with the 
 We also evaluate on the sequences of the KITTI dataset \cite{geiger2013vision} which include ground-truth pose values from a GPS + IMU sensor system. This is a popular benchmark for urban SLAM problems, and it represents an interesting challenge for our solution because it uses a different LiDAR sensor (Velodyne HDL-64E), the environment is different, and moving vehicles are present. To operate on this dataset, we adjust the solution as follows:
 \begin{compactitem}
     \item Discard LiDAR points that are farther than 50m or closer than 1m, to avoid high distortion and points belonging to the sensor rig
-
     \item Use a larger base voxel size: as the scanned environment is larger, we use a default voxel size of 0.2m instead of 0.1m
 \end{compactitem}
 The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
@@ -282,7 +281,15 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
 \section{GPS-integrated evaluation}
 % using noisy gps on our data
 
+So far, our method has been evaluated without any GPS input, essentially acting as a LiDAR-based dead-reckoning solution. In this section, we use the data from the GNSS receiver to imitate a real use-case, and assess the trajectory against a GPS-only approach.
+
+First, we would like to observe how robust the solution is to GPS noise. Starting from the existing GPS readings, we introduce artificial noise to the location values by sampling a zero-mean Gaussian distribution for each component, and modify the corresponding covariance based on the $\sigma$ of the noise distribution. The resulting readings and covariance values are used as input for the method, simulating signal scatter.
+
 % using less gps on our data
+A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency.
+
+% removing GPS sections... how to evaluate
+Additionally, we simulate signal dropout by removing a subsection of GPS data and evaluating the method's ability to reconstruct that segment.
 
 
 \section{Mapping evaluation}
