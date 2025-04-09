@@ -234,20 +234,25 @@ The first odometry evaluation we perform is on the trajectory recorded with the 
 \begin{table}[h]
     \centering
     {\small
-        \begin{tabular}{c|cc|cc|cc|cc|cc}
+        \begin{tabular}{c|ccc|ccc|ccc}
             \hline
-                           &                                    &                                     &                            &                             & \multicolumn{6}{c}{\textbf{Avg. RTE}}                                                                                 \\
-                           & \multicolumn{2}{c|}{ \textbf{ATE}} & \multicolumn{2}{c|}{\textbf{Final}} & \multicolumn{2}{c|}{$k=1$} & \multicolumn{2}{c|}{$k=10$} & \multicolumn{2}{c}{$k=100$}                                                                                           \\
-                           & \textbf{tra.}                      & \textbf{rot.}                       & \textbf{tra.}              & \textbf{rot.}               & \textbf{tra.}                         & \textbf{rot.} & \textbf{tra.} & \textbf{rot.} & \textbf{tra.} & \textbf{rot.} \\
-                           & (m)                                & (rad)                               & (m)                        & (rad)                       & (\%)                                  & (\%)          & (\%)          & (\%)          & (\%)          & (\%)          \\
+                     & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c|}{\textbf{Final}} & \multicolumn{3}{c}{\textbf{Avg. RTE} (100m)}                                                                                                  \\
+                     & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}                                & \textbf{XY}   & \textbf{tra.} & \textbf{rot.} & \textbf{XY}   & \textbf{tra.} & \textbf{rot.}  \\
+                     & (m)                               & (m)                                 & (rad)                                        & (m)           & (m)           & (rad)         & (\%)          & (\%)          & (\%)           \\
             \hline
+            \multicolumn{10}{c}{Full trajectory (644.4m)}                                                                                                                                                                                      \\
             \hline
-            \textbf{K-ICP} & 46.879                             & 0.407                               & 65.965                     & 0.688                       & 3.72                                  & 28.89         & 1.95          & 17.31         & 3.05          & 17.49         \\
-            \textbf{Ours}  & 8.232                              & 0.102                               & 1.311                      & 0.095                       & 2.81                                  & 16.67         & 1.36          & 10.88         & 1.15          & 11.28         \\
+            KISS-ICP & 34.68                             & 35.21                               & 0.32                                         & 50.82         & 51.65         & 0.58          & 31.32         & 36.21         & 111.87         \\
+            Ours     & \textbf{1.68}                     & \textbf{8.23}                       & \textbf{0.1}                                 & \textbf{1.08} & \textbf{1.31} & \textbf{0.1}  & \textbf{1.23} & \textbf{2.49} & \textbf{16.26} \\
+            \hline
+            \multicolumn{10}{c}{Initial section of trajectory (216m)}                                                                                                                                                                          \\
+            \hline
+            KISS-ICP & \textbf{0.77}                     & \textbf{4.04}                       & 0.08                                         & \textbf{1.33} & \textbf{4.55} & 0.10          & \textbf{0.29} & 4.97          & 38.37          \\
+            Ours     & 1.33                              & 5.07                                & 0.08                                         & 2.11          & 8.95          & 0.10          & 0.63          & \textbf{2.64} & \textbf{24.35} \\
             \hline
         \end{tabular}
     }
-    \caption{Comparison with KISS-ICP \cite{vizzo2023ral} on custom trajectory. We report RTE for sub-sequences of various lengths, where $k$ is the number of LiDAR scans. }
+    \caption{Comparison with KISS-ICP \cite{vizzo2023ral} on custom trajectory. We report average RTE for sub-sequences 100m. }
     \label{tab:custom-traj-results}
 \end{table}
 
