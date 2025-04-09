@@ -133,9 +133,6 @@ Following the motion compensation applied during dataset pre-processing, every i
 \subsection{Local map size}
 %% how do the results change, depending on the number of previous scans stored
 
-Next, we observe the behavior of the algorithm in relation to the size of the local map, \ie the number of previous scans that the registration is performed against. Given the high frequency and operational range of the sensor, consecutive scans have large overlapping areas which represent useful cues for point cloud alignment. This is proven by the low odometry errors obtained for map size $\geq 5$ in Table~\ref{tab:map_sizes}. When larger maps are used, the computational time increases, without significant improvements for trajectory estimation.
-
-
 \begin{table}[h]
     \centering
     {\small
@@ -156,10 +153,11 @@ Next, we observe the behavior of the algorithm in relation to the size of the lo
             \hline
         \end{tabular}
     }
-    \caption{Metrics for varying map sizes.}
+    \caption{Metrics for varying map sizes, on a sequence of 500 LiDAR scans. As more past scans are used to build the local map, the registration step becomes slower, but the odometry error decreases. We use 10 previous scans, as that provides a good balance between speed and accuracy.}
     \label{tab:map_sizes}
 \end{table}
 
+Next, we observe the behavior of the algorithm in relation to the size of the local map, \ie the number of previous scans that the registration is performed against. Given the high frequency and operational range of the sensor, consecutive scans have large overlapping areas which represent useful cues for point cloud alignment. This is proven by the low odometry errors obtained for map size $\geq 5$ in Table~\ref{tab:map_sizes}. When larger maps are used, the computational time increases, without significant improvements for trajectory estimation.
 \subsection{Registration strategy}
 %% how do the results change, depending on whether we use GICP or not
 
@@ -182,7 +180,7 @@ We also assess the influence of the Generalized ICP registration step. During th
             \hline
         \end{tabular}
     }
-    \caption{Metrics for GICP variations.}
+    \caption{Metrics for GICP variations, on a sequence of 500 LiDAR scans. We use GICP in order to improve surface alignment, as a second registration step after robust ICP. Having a larger correspondence threshold increases the risk of selecting incorrect point pairs, but helps align sparse regions of the scans.}
     \label{tab:gicp_variations}
 \end{table}
 
@@ -278,7 +276,7 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
         \begin{tabular}{c|c|ccc|ccc|ccc}
             \hline
                           &                 & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c|}{\textbf{Final}} & \multicolumn{3}{c}{\textbf{Avg. RTE} (100m)}                                                                                             \\
-            \textbf{Seq.} & \textbf{Length} & \textbf{XY}                       & \textbf{Tra.}                       & \textbf{Rot.}                                & \textbf{XY} & \textbf{Tra.} & \textbf{Rot.} & \textbf{XY} & \textbf{Tra.} & \textbf{Rot.} \\
+            \textbf{Seq.} & \textbf{Length} & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}                                & \textbf{XY} & \textbf{tra.} & \textbf{rot.} & \textbf{XY} & \textbf{tra.} & \textbf{rot.} \\
                           & (m)             & (m)                               & (m)                                 & (rad)                                        & (m)         & (m)           & (rad)         & (\%)        & (\%)          & (\%)          \\
             \hline \hline
             00            & 3723.24         & 7.29                              & 16.28                               & 0.07                                         & 10.59       & 11.58         & 0.06          & 0.81        & 1.23          & 12.88         \\
@@ -295,7 +293,7 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
             \hline
         \end{tabular}
     }
-    \caption{Odometry evaluation on KITTI sequences. We report the XY-only error values to emphasize localization performance. RTE values are reported in \%, averaged over all 100m sub-sequences.}
+    \caption{Odometry evaluation on KITTI sequences. We report the XY-only error values to emphasize localization performance. RTE values are averaged over all 100m sub-sequences. Like most dead-reckoning solutions, the ATE and Final errors increase with the length of the trajectory.}
     \label{tab:odom-kitti}
 \end{table}
 
