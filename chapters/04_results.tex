@@ -110,7 +110,7 @@ Following the motion compensation applied during dataset pre-processing, every i
     \subcaptionbox{Visual comparison. }{
         \includegraphics[width=0.45\linewidth]{images/voxel-size-comp.png}
     }
-    \caption[Voxel size effect on map quality]{Voxel size effect on map quality.}
+    \caption[Voxel size effect on map quality]{Voxel size effect on map quality: a smaller voxel size results in more accurate registration, leading to lower entropy and sharper edges.}
     \label{fig:voxel-size-mapping}
 \end{figure}
 
@@ -158,10 +158,8 @@ Following the motion compensation applied during dataset pre-processing, every i
 \end{table}
 
 Next, we observe the behavior of the algorithm in relation to the size of the local map, \ie the number of previous scans that the registration is performed against. Given the high frequency and operational range of the sensor, consecutive scans have large overlapping areas which represent useful cues for point cloud alignment. This is proven by the low odometry errors obtained for map size $\geq 5$ in Table~\ref{tab:map_sizes}. When larger maps are used, the computational time increases, without significant improvements for trajectory estimation.
-\subsection{Registration strategy}
-%% how do the results change, depending on whether we use GICP or not
 
-We also assess the influence of the Generalized ICP registration step. During the experimental phase, we observed that this has a very positive effect on accurately matching the ground plane, and this is confirmed by the metrics in Table~\ref{tab:gicp_variations}. For a more thorough analysis, we show the results corresponding to several distance threshold values, and compare against the case where only point-to-point ICP is used. The no-GICP version leads to higher trajectory errors overall, but we note that the Z component (elevation) has the highest contribution to this error. The XY error is smaller when GICP is not used~\reffigbr{gicp-result-xy}, but the Z error is almost doubled \reffigbr{gicp-z-error}. In terms of map quality, using GICP clearly helps reduce point entropies and point-to-plane errors, so the surfaces of the output map capture more details, but additional constraints (\ie GPS) will help prevent drifts.
+
 
 \begin{table}[h]
     \centering
@@ -183,8 +181,7 @@ We also assess the influence of the Generalized ICP registration step. During th
     \caption{Metrics for GICP variations, on a sequence of 500 LiDAR scans. We use GICP in order to improve surface alignment, as a second registration step after robust ICP. Having a larger correspondence threshold increases the risk of selecting incorrect point pairs, but helps align sparse regions of the scans.}
     \label{tab:gicp_variations}
 \end{table}
-
-\begin{figure}[h]
+\begin{figure}[H]
     \centering
     \subcaptionbox{Trajectory end point location. \label{fig:gicp-result-xy}}{
         \includegraphics[width=0.47\linewidth]{images/gicp-result-xy.pdf}
@@ -193,11 +190,16 @@ We also assess the influence of the Generalized ICP registration step. During th
     \subcaptionbox{Z error evolution.\label{fig:gicp-z-error}}{
         \includegraphics[width=0.44\linewidth]{images/gicp-z-error.pdf}
     }
-    \caption[Trajectory evaluation with and without GICP]{Trajectory evaluation with and without GICP.}
+    \caption[Trajectory evaluation with and without GICP]{Trajectory evaluation with and without GICP. The additional GICP registration step reduces the Z-alignment error.}
     \label{fig:gicp-traj-result}
 \end{figure}
 
-\begin{figure}[h]
+\subsection{Registration strategy}
+%% how do the results change, depending on whether we use GICP or not
+
+We also assess the influence of the Generalized ICP registration step. During the experimental phase, we observed that this has a very positive effect on accurately matching the ground plane, and this is confirmed by the metrics in Table~\ref{tab:gicp_variations}. For a more thorough analysis, we show the results corresponding to several distance threshold values, and compare against the case where only point-to-point ICP is used. The no-GICP version leads to higher trajectory errors overall, but we note that the Z component (elevation) has the highest contribution to this error. The XY error is smaller when GICP is not used~\reffigbr{gicp-result-xy}, but the Z error is almost doubled \reffigbr{gicp-z-error}. In terms of map quality, using GICP clearly helps reduce point entropies and point-to-plane errors, so the surfaces of the output map capture more details, but additional constraints (\ie GPS) will help prevent drifts.
+
+\begin{figure}[H]
     \centering
     \subcaptionbox{Distribution of point entropies.}{
         \includegraphics[width=0.46\linewidth]{images/gicp-map-entropy.pdf}
@@ -209,7 +211,7 @@ We also assess the influence of the Generalized ICP registration step. During th
     % \subcaptionbox{Observing the Z difference in CloudCompare. Yellow - without GICP, white - with GICP.}{
     %     \includegraphics[width=0.45\linewidth]{images/gicp-z-error-view.png}
     % }
-    \caption[Map evaluation with and without GICP]{Map evaluation with and without GICP.}
+    \caption[Map evaluation with and without GICP]{Map evaluation with and without GICP. Entropy and point-to-plane errors are lower, when GICP is used.}
     \label{fig:gicp-map-result}
 \end{figure}
 
@@ -252,7 +254,7 @@ The first odometry evaluation we perform is on the trajectory recorded with the 
             \hline
         \end{tabular}
     }
-    \caption{Comparison with KISS-ICP \cite{vizzo2023ral} on custom trajectory. We report average RTE for sub-sequences 100m. }
+    \caption{Comparison with KISS-ICP \cite{vizzo2023ral} on custom trajectory. We report average RTE for sub-sequences 100m. KISS-ICP performs better when the scans are captured at equal intervals, but diverges as soon as a significant jump occurs.}
     \label{tab:custom-traj-results}
 \end{table}
 
@@ -268,12 +270,13 @@ The first odometry evaluation we perform is on the trajectory recorded with the 
     \caption[Position analysis on custom trajectory]{Position analysis on custom trajectory. }
     \label{fig:xyz-traj}
 \end{figure}
+
 We also evaluate on the sequences of the KITTI dataset \cite{geiger2013vision} which include ground-truth pose values from a GPS + IMU sensor system. This is a popular benchmark for urban SLAM problems, and it represents an interesting challenge for our solution because it uses a different LiDAR sensor (Velodyne HDL-64E), the environment is different, and moving vehicles are present. To operate on this dataset, we adjust the solution as follows:
 \begin{compactitem}
     \item Discard LiDAR points that are farther than 50m or closer than 1m, to avoid high distortion and points belonging to the sensor rig
     \item Use a larger base voxel size: as the scanned environment is larger, we use a default voxel size of 0.2m instead of 0.1m
 \end{compactitem}
-The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
+The results of this evaluation are presented in Table~\ref{tab:odom-kitti} and Figure~\ref{fig:kitti-traj}.
 
 \begin{table}[h]
     \centering
@@ -301,6 +304,21 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti}.
     \caption{Odometry evaluation on KITTI sequences. We report the XY-only error values to emphasize localization performance. RTE values are averaged over all 100m sub-sequences. Like most dead-reckoning solutions, the ATE and Final errors increase with the length of the trajectory.}
     \label{tab:odom-kitti}
 \end{table}
+
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{Sequence 00.}{
+        \includegraphics[width=0.3\linewidth]{images/kitti/00.pdf}
+    }
+    \subcaptionbox{Sequence 02.}{
+        \includegraphics[width=0.3\linewidth]{images/kitti/02.pdf}
+    }
+    \subcaptionbox{Sequence 08.}{
+        \includegraphics[width=0.3\linewidth]{images/kitti/08.pdf}
+    }
+    \caption[Odometry evaluation on KITTI sequences]{Odometry results on the three longest KITTI sequences.}
+    \label{fig:kitti-traj}
+\end{figure}
 
 \section{GPS-integrated evaluation}
 % using noisy gps on our data
