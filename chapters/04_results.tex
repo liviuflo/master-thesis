@@ -157,7 +157,7 @@ Following the motion compensation applied during dataset pre-processing, every i
     \label{tab:map_sizes}
 \end{table}
 
-Next, we observe the behavior of the algorithm in relation to the size of the local map, \ie the number of previous scans that the registration is performed against. Given the high frequency and operational range of the sensor, consecutive scans have large overlapping areas which represent useful cues for point cloud alignment. This is proven by the low odometry errors obtained for map size $\geq 5$ in Table~\ref{tab:map_sizes}. When larger maps are used, the computational time increases, without significant improvements for trajectory estimation.
+In this experiment, we observe the behavior of the algorithm in relation to the size of the local map, \ie the number of previous scans that the registration is performed against. Given the high frequency and operational range of the sensor, consecutive scans have large overlapping areas which represent useful cues for point cloud alignment. This is proven by the low odometry errors obtained for map size $\geq 5$ in Table~\ref{tab:map_sizes}. When larger maps are used, the computational time increases, without significant improvements for trajectory estimation.
 
 
 
@@ -325,20 +325,75 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti} and F
 
 So far, our method has been evaluated without any GPS input, essentially acting as a LiDAR-based dead-reckoning solution. In this section, we use the data from the GNSS receiver to imitate a real use-case, and assess the trajectory against a GPS-only approach.
 
-First, we would like to observe how robust the solution is to GPS noise. Starting from the existing GPS readings, we introduce artificial noise to the location values by sampling a zero-mean Gaussian distribution for each component, and modify the corresponding covariance based on the $\sigma$ of the noise distribution. The resulting readings and covariance values are used as input for the method, simulating signal scatter.
+First, we would like to observe how robust the solution is to GPS noise, to mimic a scenario where RTK data is not available, or the GPS signal is very poor. Starting from the existing GPS readings, we introduce artificial noise to the location values by sampling a zero-mean Gaussian distribution for each component, and modify the associated covariance based on the $\sigma$ of the noise distribution. The resulting readings and covariance values are used as input for the method, simulating signal scatter. IMU readings are not affected, but we increase the covariance of the orientation components by 0.01, to allow for adjustments from the graph optimization component. We present the results of this experiment in Table~\ref{tab:gps-noisy}, by comparing the noisy GPS input and the output of our method against the accurate GPS location readings. The same phenomenon is shown in Figure~\ref{fig:gps-noise-correction}.
 
 % 0cm, 5cm, 10cm, 50cm, 100cm, 500cm
 % Table columns:
 % Noise sigma, 
 
+\begin{table}[h!]
+    \centering
+    {\small
+        \begin{tabular}{c|ccccc|ccccc}
+            \hline
+            \textbf{Noise} $\sigma$ & \multicolumn{5}{c|}{\textbf{Noisy GPS Input}} & \multicolumn{5}{c}{\textbf{Ours}}                                                                                                                                                                                 \\
+            (m)                     & \multicolumn{2}{c}{\textbf{ATE} (m)}          & \multicolumn{3}{c|}{\textbf{Roughness} (m)} & \multicolumn{2}{c}{\textbf{ATE} (m)} & \multicolumn{3}{c}{\textbf{Roughness} (m)}                                                                                   \\
+                                    & \textbf{XY}                                   & \textbf{tra.}                               & \textbf{X}                           & \textbf{Y}                                 & \textbf{Z} & \textbf{XY} & \textbf{tra.} & \textbf{X} & \textbf{Y} & \textbf{Z} \\
+            \hline
+            \hline
+            0.05                    & 0.114                                         & 0.134                                       & 0.005                                & 0.007                                      & 0.002      & 0.029       & 0.032         & 0.003      & 0.005      & 0.000      \\
+            0.1                     & 0.228                                         & 0.268                                       & 0.011                                & 0.014                                      & 0.009      & 0.058       & 0.067         & 0.003      & 0.005      & 0.001      \\
+            0.5                     & 1.140                                         & 1.340                                       & 0.218                                & 0.241                                      & 0.228      & 0.285       & 0.571         & 0.015      & 0.018      & 0.013      \\
+            1.0                     & 2.280                                         & 2.680                                       & 0.866                                & 0.947                                      & 0.910      & 0.707       & 1.219         & 0.058      & 0.064      & 0.056      \\
+            2.0                     & 4.559                                         & 5.359                                       & 3.457                                & 3.768                                      & 3.641      & 2.165       & 7.623         & 0.2        & 0.212      & 0.223      \\
+            \hline
+        \end{tabular}
+    }
+    \caption[Trajectory evaluation with noisy GPS]{Trajectory evaluation with noisy GPS input, on a sequence of 1000 LiDAR scans~(approx. 131.7m), against the zero-noise GPS readings. Roughness is measured by fitting a cubic polynomial to subsequences of each dimension --- X, Y and Z, as a function of time --- and averaging the fitting error across all subsequences. Our method is able to filter out GPS noise, reconstructing a trajectory that is smoother and closer to the ground truth.}
+    \label{tab:gps-noisy}
+\end{table}
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{A straight region.}{
+        \includegraphics[width=0.475\linewidth]{images/noisy_gps/noisy_01.pdf}
+    }
+    \subcaptionbox{A corner region.}{
+        \includegraphics[width=0.475\linewidth]{images/noisy_gps/noisy_corner.pdf}
+    }
+    \caption[Trajectory corrections over noisy GPS]{Trajectory corrections on noisy GPS input. The path computed by our method (blue) is smoother and closer to the expected path (pink) compared to the noisy GPS path (brown).}
+    \label{fig:gps-noise-correction}
+\end{figure}
+
+
 % using less gps on our data
-A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency.
+A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and recovered after a period of time, indicating that our method is also capable of handling such scenarios.
 
 % no skip, 5, 10, 50, 100, 500
 
-% removing GPS sections... how to evaluate
-Additionally, we simulate signal dropout by removing a subsection of GPS data and evaluating the method's ability to reconstruct that segment.
-
+\begin{table}[h]
+    \centering
+    {\small
+        \begin{tabular}{cc|ccc|ccc}
+            \hline
+            \textbf{GPS}    & \textbf{GPS}   & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c}{\textbf{Final}}                                                                              \\
+            \textbf{Skip}   & \textbf{Count} & \textbf{XY}                       & \textbf{translation}               & \textbf{rotation} & \textbf{XY} & \textbf{translation} & \textbf{rotation} \\
+            \textbf{Factor} &                & (m)                               & (m)                                & (rad)             & (m)         & (m)                  & (rad)             \\
+            \hline
+            \hline
+            --              & 1000           & 0.003                             & 0.026                              & 0.001             & 0.005       & 0.040                & 0.001             \\
+            5               & 200            & 0.009                             & 0.021                              & 0.001             & 0.008       & 0.037                & 0.002             \\
+            10              & 100            & 0.012                             & 0.016                              & 0.002             & 0.010       & 0.027                & 0.002             \\
+            50              & 20             & 0.022                             & 0.025                              & 0.005             & 0.026       & 0.028                & 0.007             \\
+            100             & 10             & 0.027                             & 0.034                              & 0.007             & 0.050       & 0.055                & 0.012             \\
+            334             & 3              & 0.070                             & 0.121                              & 0.013             & 0.036       & 0.146                & 0.019             \\
+            500             & 2              & 0.107                             & 0.445                              & 0.019             & 0.107       & 0.741                & 0.028             \\
+            1000            & 1              & 1.173                             & 3.869                              & 0.067             & 1.543       & 6.083                & 0.090             \\
+            \hline
+        \end{tabular}
+    }
+    \caption{Trajectory evaluation with varying GPS Skip Factor, on a sequence of 1000 LiDAR scans. The ground truth that we test against are the GPS readings provided as input to the method. As expected, the error increases as fewer GPS frequency decreases, but the magnitude of the errors remains small, even when few readings are used.}
+    \label{tab:gps-skip}
+\end{table}
 
 \section{Mapping evaluation}
 
