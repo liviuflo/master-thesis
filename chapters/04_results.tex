@@ -211,7 +211,7 @@ We also assess the influence of the Generalized ICP registration step. During th
     % \subcaptionbox{Observing the Z difference in CloudCompare. Yellow - without GICP, white - with GICP.}{
     %     \includegraphics[width=0.45\linewidth]{images/gicp-z-error-view.png}
     % }
-    \caption[Map evaluation with and without GICP]{Map evaluation with and without GICP. Entropy and point-to-plane errors are lower, when GICP is used.}
+    \caption[Map evaluation with and without GICP]{Map evaluation with and without GICP. Entropy and point-to-plane errors are lower, when GICP is used, indicating a higher-quality map.}
     \label{fig:gicp-map-result}
 \end{figure}
 
@@ -283,21 +283,21 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti} and F
     {\small
         \begin{tabular}{c|c|ccc|ccc|ccc}
             \hline
-                          &                 & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c|}{\textbf{Final}} & \multicolumn{3}{c}{\textbf{Avg. RTE} (100m)}                                                                                             \\
-            \textbf{Seq.} & \textbf{Length} & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}                                & \textbf{XY} & \textbf{tra.} & \textbf{rot.} & \textbf{XY} & \textbf{tra.} & \textbf{rot.} \\
-                          & (m)             & (m)                               & (m)                                 & (rad)                                        & (m)         & (m)           & (rad)         & (\%)        & (\%)          & (\%)          \\
+                          &                 & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c|}{\textbf{Final}} & \multicolumn{3}{c}{\textbf{Avg. RTE} (100m)}                                                                                                \\
+            \textbf{Seq.} & \textbf{Length} & \textbf{XY}                       & \textbf{tra.}                       & \textbf{rot.}                                & \textbf{XY}   & \textbf{tra.} & \textbf{rot.} & \textbf{XY}  & \textbf{tra.} & \textbf{rot.} \\
+                          & (m)             & (m)                               & (m)                                 & (rad)                                        & (m)           & (m)           & (rad)         & (\%)         & (\%)          & (\%)          \\
             \hline \hline
-            00            & 3723.24         & 7.29                              & 16.28                               & 0.07                                         & 10.59       & 11.58         & 0.06          & 0.81        & 1.23          & 12.88         \\
-            01            & 2453.26         & 24.53                             & 190.1                               & 0.21                                         & 39.9        & 291.51        & 0.3           & 0.98        & 1.31          & 45.7          \\
-            02            & 5067.02         & 22.2                              & 50.39                               & 0.13                                         & 49.72       & 99.53         & 0.22          & 0.7         & 1.22          & 11.99         \\
-            03            & 560.85          & 2.92                              & 8.84                                & 0.05                                         & 6.35        & 18.15         & 0.08          & 0.57        & 0.67          & 7.69          \\
-            04            & 393.65          & 0.72                              & 4.98                                & 0.03                                         & 1.16        & 11.76         & 0.06          & 0.39        & 0.89          & 125.81        \\
-            05            & 2205.2          & 4.62                              & 6.92                                & 0.04                                         & 9.2         & 13.79         & 0.07          & 0.5         & 1.02          & 20.44         \\
-            06            & 1232.69         & 2.03                              & 3.78                                & 0.03                                         & 4.88        & 8.79          & 0.05          & 0.59        & 0.91          & 54.07         \\
-            07            & 694.39          & 0.5                               & 1.8                                 & 0.02                                         & 0.96        & 1.36          & 0.02          & 0.58        & 1.0           & 5.12          \\
-            08            & 3222.02         & 16.73                             & 28.33                               & 0.08                                         & 20.9        & 33.15         & 0.11          & 1.04        & 1.52          & 24.66         \\
-            09            & 1704.96         & 6.12                              & 14.12                               & 0.06                                         & 9.28        & 9.78          & 0.04          & 0.68        & 1.03          & 8.1           \\
-            10            & 919.4           & 3.94                              & 18.8                                & 0.07                                         & 4.61        & 21.78         & 0.09          & 0.65        & 1.04          & 8.79          \\
+            00            & 3723.24         & 7.29                              & 16.28                               & 0.07                                         & 10.59         & 11.58         & 0.06          & 0.81         & 1.23          & 12.88         \\
+            01            & 2453.26         & 24.53                             & 190.1                               & 0.21                                         & 39.9          & 291.51        & 0.3           & 0.98         & 1.31          & 45.7          \\
+            02            & 5067.02         & 22.2                              & 50.39                               & 0.13                                         & 49.72         & 99.53         & 0.22          & 0.7          & 1.22          & 11.99         \\
+            03            & 560.85          & 2.92                              & 8.84                                & 0.05                                         & 6.35          & 18.15         & 0.08          & 0.57         & \textbf{0.67} & 7.69          \\
+            04            & 393.65          & 0.72                              & 4.98                                & 0.03                                         & 1.16          & 11.76         & 0.06          & 0.39         & 0.89          & 125.81        \\
+            05            & 2205.2          & 4.62                              & 6.92                                & 0.04                                         & 9.2           & 13.79         & 0.07          & \textbf{0.5} & 1.02          & 20.44         \\
+            06            & 1232.69         & 2.03                              & 3.78                                & 0.03                                         & 4.88          & 8.79          & 0.05          & 0.59         & 0.91          & 54.07         \\
+            07            & 694.39          & \textbf{0.5}                      & \textbf{1.8}                        & \textbf{0.02}                                & \textbf{0.96} & \textbf{1.36} & \textbf{0.02} & 0.58         & 1.0           & \textbf{5.12} \\
+            08            & 3222.02         & 16.73                             & 28.33                               & 0.08                                         & 20.9          & 33.15         & 0.11          & 1.04         & 1.52          & 24.66         \\
+            09            & 1704.96         & 6.12                              & 14.12                               & 0.06                                         & 9.28          & 9.78          & 0.04          & 0.68         & 1.03          & 8.1           \\
+            10            & 919.4           & 3.94                              & 18.8                                & 0.07                                         & 4.61          & 21.78         & 0.09          & 0.65         & 1.04          & 8.79          \\
             \hline
         \end{tabular}
     }
@@ -336,16 +336,16 @@ First, we would like to observe how robust the solution is to GPS noise, to mimi
     {\small
         \begin{tabular}{c|ccccc|ccccc}
             \hline
-            \textbf{Noise} $\sigma$ & \multicolumn{5}{c|}{\textbf{Noisy GPS Input}} & \multicolumn{5}{c}{\textbf{Ours}}                                                                                                                                                                                 \\
-            (m)                     & \multicolumn{2}{c}{\textbf{ATE} (m)}          & \multicolumn{3}{c|}{\textbf{Roughness} (m)} & \multicolumn{2}{c}{\textbf{ATE} (m)} & \multicolumn{3}{c}{\textbf{Roughness} (m)}                                                                                   \\
-                                    & \textbf{XY}                                   & \textbf{tra.}                               & \textbf{X}                           & \textbf{Y}                                 & \textbf{Z} & \textbf{XY} & \textbf{tra.} & \textbf{X} & \textbf{Y} & \textbf{Z} \\
+            \textbf{Noise} $\sigma$ & \multicolumn{5}{c|}{\textbf{Noisy GPS Input}} & \multicolumn{5}{c}{\textbf{Ours}}                                                                                                                                                                                                     \\
+            (m)                     & \multicolumn{2}{c}{\textbf{ATE} (m)}          & \multicolumn{3}{c|}{\textbf{Roughness} (m)} & \multicolumn{2}{c}{\textbf{ATE} (m)} & \multicolumn{3}{c}{\textbf{Roughness} (m)}                                                                                                       \\
+                                    & \textbf{XY}                                   & \textbf{tra.}                               & \textbf{X}                           & \textbf{Y}                                 & \textbf{Z}     & \textbf{XY}    & \textbf{tra.}  & \textbf{X}     & \textbf{Y}     & \textbf{Z}     \\
             \hline
             \hline
-            0.05                    & 0.114                                         & 0.134                                       & 0.005                                & 0.007                                      & 0.002      & 0.029       & 0.032         & 0.003      & 0.005      & 0.000      \\
-            0.1                     & 0.228                                         & 0.268                                       & 0.011                                & 0.014                                      & 0.009      & 0.058       & 0.067         & 0.003      & 0.005      & 0.001      \\
-            0.5                     & 1.140                                         & 1.340                                       & 0.218                                & 0.241                                      & 0.228      & 0.285       & 0.571         & 0.015      & 0.018      & 0.013      \\
-            1.0                     & 2.280                                         & 2.680                                       & 0.866                                & 0.947                                      & 0.910      & 0.707       & 1.219         & 0.058      & 0.064      & 0.056      \\
-            2.0                     & 4.559                                         & 5.359                                       & 3.457                                & 3.768                                      & 3.641      & 2.165       & 7.623         & 0.2        & 0.212      & 0.223      \\
+            0.05                    & \textbf{0.114}                                & \textbf{0.134}                              & \textbf{0.005}                       & \textbf{0.007}                             & \textbf{0.002} & \textbf{0.029} & \textbf{0.032} & \textbf{0.003} & \textbf{0.005} & \textbf{0.000} \\
+            0.1                     & 0.228                                         & 0.268                                       & 0.011                                & 0.014                                      & 0.009          & 0.058          & 0.067          & \textbf{0.003} & \textbf{0.005} & 0.001          \\
+            0.5                     & 1.140                                         & 1.340                                       & 0.218                                & 0.241                                      & 0.228          & 0.285          & 0.571          & 0.015          & 0.018          & 0.013          \\
+            1.0                     & 2.280                                         & 2.680                                       & 0.866                                & 0.947                                      & 0.910          & 0.707          & 1.219          & 0.058          & 0.064          & 0.056          \\
+            2.0                     & 4.559                                         & 5.359                                       & 3.457                                & 3.768                                      & 3.641          & 2.165          & 7.623          & 0.2            & 0.212          & 0.223          \\
             \hline
         \end{tabular}
     }
@@ -375,19 +375,19 @@ A different evaluation strategy consists of dropping GPS readings at regular int
     {\small
         \begin{tabular}{cc|ccc|ccc}
             \hline
-            \textbf{GPS}    & \textbf{GPS}   & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c}{\textbf{Final}}                                                                              \\
-            \textbf{Skip}   & \textbf{Count} & \textbf{XY}                       & \textbf{translation}               & \textbf{rotation} & \textbf{XY} & \textbf{translation} & \textbf{rotation} \\
-            \textbf{Factor} &                & (m)                               & (m)                                & (rad)             & (m)         & (m)                  & (rad)             \\
+            \textbf{GPS}    & \textbf{GPS}   & \multicolumn{3}{c|}{\textbf{ATE}} & \multicolumn{3}{c}{\textbf{Final}}                                                                                 \\
+            \textbf{Skip}   & \textbf{Count} & \textbf{XY}                       & \textbf{translation}               & \textbf{rotation} & \textbf{XY}    & \textbf{translation} & \textbf{rotation} \\
+            \textbf{Factor} &                & (m)                               & (m)                                & (rad)             & (m)            & (m)                  & (rad)             \\
             \hline
             \hline
-            --              & 1000           & 0.003                             & 0.026                              & 0.001             & 0.005       & 0.040                & 0.001             \\
-            5               & 200            & 0.009                             & 0.021                              & 0.001             & 0.008       & 0.037                & 0.002             \\
-            10              & 100            & 0.012                             & 0.016                              & 0.002             & 0.010       & 0.027                & 0.002             \\
-            50              & 20             & 0.022                             & 0.025                              & 0.005             & 0.026       & 0.028                & 0.007             \\
-            100             & 10             & 0.027                             & 0.034                              & 0.007             & 0.050       & 0.055                & 0.012             \\
-            334             & 3              & 0.070                             & 0.121                              & 0.013             & 0.036       & 0.146                & 0.019             \\
-            500             & 2              & 0.107                             & 0.445                              & 0.019             & 0.107       & 0.741                & 0.028             \\
-            1000            & 1              & 1.173                             & 3.869                              & 0.067             & 1.543       & 6.083                & 0.090             \\
+            --              & 1000           & \textbf{0.003}                    & 0.026                              & \textbf{0.001}    & \textbf{0.005} & 0.040                & \textbf{0.001}    \\
+            5               & 200            & 0.009                             & 0.021                              & \textbf{0.001}    & 0.008          & 0.037                & 0.002             \\
+            10              & 100            & 0.012                             & \textbf{0.016}                     & 0.002             & 0.010          & \textbf{0.027}       & 0.002             \\
+            50              & 20             & 0.022                             & 0.025                              & 0.005             & 0.026          & 0.028                & 0.007             \\
+            100             & 10             & 0.027                             & 0.034                              & 0.007             & 0.050          & 0.055                & 0.012             \\
+            334             & 3              & 0.070                             & 0.121                              & 0.013             & 0.036          & 0.146                & 0.019             \\
+            500             & 2              & 0.107                             & 0.445                              & 0.019             & 0.107          & 0.741                & 0.028             \\
+            1000            & 1              & 1.173                             & 3.869                              & 0.067             & 1.543          & 6.083                & 0.090             \\
             \hline
         \end{tabular}
     }
