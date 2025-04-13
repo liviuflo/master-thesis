@@ -397,30 +397,49 @@ A different evaluation strategy consists of dropping GPS readings at regular int
 
 \section{Mapping evaluation}
 
-We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by pasting the LiDAR scans at the RTK-corrected poses. The first such evaluation consists of plotting the distribution of the point entropy values in various scenes, as shown in Figures~\ref{fig:map-eval-regular}~and~\ref{fig:map-eval-vegetation}. We also plot the output obtained when only every 10th GPS reading is used --- fewer GPS contraints enable a higher contribution of the registration result to the final pose estimation. A similar effect can be achieved by increasing the covariance of the GPS reading. The results indicate that this improves map quality without altering the accuracy of the trajectory.
+We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by pasting the LiDAR scans at the RTK-corrected poses. The first such evaluation consists of plotting the distribution of the point entropy values and point-to-plane error in various scenes, as shown in Figures~\ref{fig:map-eval-regular}~and~\ref{fig:map-eval-vegetation}. We also plot the output obtained when only every 10th GPS reading is used --- fewer GPS contraints enable a higher contribution of the registration result to the final pose estimation. A similar effect can be achieved by increasing the covariance of the GPS reading. The results indicate that this improves map quality without altering the accuracy of the trajectory.
 
 \begin{figure}[h]
     \centering
-    \subcaptionbox{Point entropy comparison. Dashed line indicates median value of each distribution.}{
-        \includegraphics[width=0.45\linewidth]{images/map_eval/entropy_gps_ours_skip_3000--50.pdf}
-    }
     \subcaptionbox{Output point cloud. Points are colored by height.}{
-        \includegraphics[width=0.5\linewidth]{images/map_eval/viz-3000--50.png}
+        \includegraphics[width=0.35\linewidth]{images/map_eval/viz-3000--50.png}
     }
-    \caption[Map comparison in a rural scene]{Map evaluation in a rural street scene, built from 50 consecutive scans. Point entropy is decreased, indicating better mapping.}
+    \subcaptionbox{Point entropy comparison. }{
+        \includegraphics[width=0.29\linewidth]{images/map_eval/entropy_gps_ours_skip_3000--50.pdf}
+    }
+    \subcaptionbox{Point-to-plane error comparison. }{
+        \includegraphics[width=0.29\linewidth]{images/map_eval/p2plane_gps_ours_skip-3000--50.pdf}
+    }
+
+    \caption[Map evaluation in a rural scene]{Map evaluation in a rural street scene, built from 50 consecutive scans. Dashed line indicates median value of each distribution. Point entropy and point-to-plane errors are decreased, compared to the GPS-only mapping.}
     \label{fig:map-eval-regular}
 \end{figure}
 \begin{figure}[h]
     \centering
-    \subcaptionbox{Point entropy comparison. Dashed line indicates median value of each distribution.}{
-        \includegraphics[width=0.45\linewidth]{images/map_eval/entropy_gps_ours_skip-200--50.pdf}
-    }
     \subcaptionbox{Output point cloud. Points are colored by height.}{
-        \includegraphics[width=0.5\linewidth]{images/map_eval/viz-200--50.png}
+        \includegraphics[width=0.35\linewidth]{images/map_eval/viz-200--50.png}
     }
-    \caption[Map comparison in a vegetation-dominated scene]{Map evaluation in a vegetation-dominated scene, built from 50 consecutive scans. Point entropy is decreased, indicating better mapping.}
+    \subcaptionbox{Point entropy comparison. }{
+        \includegraphics[width=0.29\linewidth]{images/map_eval/entropy_gps_ours_skip-200--50.pdf}
+    }
+    \subcaptionbox{Point-to-plane error comparison. }{
+        \includegraphics[width=0.29\linewidth]{images/map_eval/p2plane_gps_ours_skip-200--50.pdf}
+    }
+
+    \caption[Map evaluation in a vegetation-dominated scene]{Map evaluation in a vegetation-dominated scene, built from 50 consecutive scans. Dashed line indicates median value of each distribution. Point entropy and point-to-plane errors are decreased, compared to the GPS-only mapping.}
     \label{fig:map-eval-vegetation}
 \end{figure}
+% \begin{figure}[h]
+%     \centering
+%     \subcaptionbox{Point entropy comparison. }{
+%         \includegraphics[width=0.45\linewidth]{images/map_eval/entropy_gps_ours_skip-200--50.pdf}
+%     }
+%     \subcaptionbox{Output point cloud. Points are colored by height.}{
+%         \includegraphics[width=0.5\linewidth]{images/map_eval/viz-200--50.png}
+%     }
+%     \caption[Map evaluation in a vegetation-dominated scene]{Map evaluation in a vegetation-dominated scene, built from 50 consecutive scans. Dashed line indicates median value of each distribution. Point entropy is decreased, indicating better mapping.}
+%     \label{fig:map-eval-vegetation}
+% \end{figure}
 
 
 
