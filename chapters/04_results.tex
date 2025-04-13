@@ -360,13 +360,13 @@ First, we would like to observe how robust the solution is to GPS noise, to mimi
     \subcaptionbox{A corner region.}{
         \includegraphics[width=0.475\linewidth]{images/noisy_gps/noisy_corner.pdf}
     }
-    \caption[Trajectory corrections over noisy GPS]{Trajectory corrections on noisy GPS input. The path computed by our method (blue) is smoother and closer to the expected path (pink) compared to the noisy GPS path (brown).}
+    \caption[Trajectory corrections over noisy GPS]{Trajectory corrections on noisy GPS input, $\sigma = 0.1$. The path computed by our method (blue) is smoother and closer to the expected path (pink) compared to the noisy GPS path (brown).}
     \label{fig:gps-noise-correction}
 \end{figure}
 
 
 % using less gps on our data
-A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and recovered after a period of time, indicating that our method is also capable of handling such scenarios.
+A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and re-acquired after a period of time, indicating that our method is also capable of handling such scenarios, common when the vehicle is traversing a vegetation-filled region.
 
 % no skip, 5, 10, 50, 100, 500
 
@@ -396,6 +396,46 @@ A different evaluation strategy consists of dropping GPS readings at regular int
 \end{table}
 
 \section{Mapping evaluation}
+
+We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by pasting the LiDAR scans at the RTK-corrected poses. The first such evaluation consists of plotting the distribution of the point entropy values in various scenes, as shown in Figures~\ref{fig:map-eval-regular}~and~\ref{fig:map-eval-vegetation}. We also plot the output obtained when only every 10th GPS reading is used --- fewer GPS contraints enable a higher contribution of the registration result to the final pose estimation. A similar effect can be achieved by increasing the covariance of the GPS reading. The results indicate that this improves map quality without altering the accuracy of the trajectory.
+
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{Point entropy comparison. Dashed line indicates median value of each distribution.}{
+        \includegraphics[width=0.45\linewidth]{images/map_eval/entropy_gps_ours_skip_3000--50.pdf}
+    }
+    \subcaptionbox{Output point cloud. Points are colored by height.}{
+        \includegraphics[width=0.5\linewidth]{images/map_eval/viz-3000--50.png}
+    }
+    \caption[Map comparison in a rural scene]{Map evaluation in a rural street scene, built from 50 consecutive scans. Point entropy is decreased, indicating better mapping.}
+    \label{fig:map-eval-regular}
+\end{figure}
+\begin{figure}[h]
+    \centering
+    \subcaptionbox{Point entropy comparison. Dashed line indicates median value of each distribution.}{
+        \includegraphics[width=0.45\linewidth]{images/map_eval/entropy_gps_ours_skip-200--50.pdf}
+    }
+    \subcaptionbox{Output point cloud. Points are colored by height.}{
+        \includegraphics[width=0.5\linewidth]{images/map_eval/viz-200--50.png}
+    }
+    \caption[Map comparison in a vegetation-dominated scene]{Map evaluation in a vegetation-dominated scene, built from 50 consecutive scans. Point entropy is decreased, indicating better mapping.}
+    \label{fig:map-eval-vegetation}
+\end{figure}
+
+
+
+% Point entropy comparison - OK
+% Point to plane error comparison - 
+% Nearest neighbor distance comparison - Not a big difference
+
+% Visual analysis
+
+% Scan to scan RMSE 
+% Consecutive, every 2, every 3?
+
+
+% Scan to map RMSE
+% create map from surrounding poses, check middle scan
 
 % \section{KITTI results}
 
