@@ -1,6 +1,14 @@
 \chapter{Conclusion}
 \label{ch:conclusion}
 
-% Future improvements:
+This work addressed odometry, a fundamental topic of mobile robotics, with emphasis on the area of perception, and was driven by its applicability to an industrial product, the SDX-Compact manufactured by Sodex Innovations GmbH. Range information from a 360-degree LiDAR sensor is fused with localization and orientation measurements provided by an INS, to increase robustness to GPS perturbations and enable 3D mapping quality beyond the accuracy of RTK-corrected readings.
+
+We provided a review of the current state of research around this problem and its many facets. This was followed by a presentation of the hardware and data that we operate on, and a detailed explanation of the experiments conducted around each component of our final solution. Our contribution is an original displacement estimation method which relies on a two-step scan alignment process (robust ICP and Generalized ICP) and a factor graph structure, for integrating GPS readings. To enforce point cloud registration constraints, we add ``skip connections'' between non-consecutive poses, based on the ICP-estimated displacement.
+
+% discuss results
+% discuss general conclusions about the data used and the problems encountered
+
+% \section{Future Work}
+% Z drift
 % integrate RGB data
-% 
+% improve performance
