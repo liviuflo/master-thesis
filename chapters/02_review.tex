@@ -35,12 +35,12 @@ Neural Networks can also be used for point cloud registration, by creating corre
 
 Despite their high price range, LiDAR sensors have gained significant popularity in the last decade, becoming the go-to solution for autonomous mobility. Unlike cameras, LiDARs are not dependent on ambient lighting, so they can operate in total darkness, and they provide high-frequency, reliable 3D information without the need for additional processing. Basic applications include obstacle detection \cite{asvadi20163d,chen2017lidar}, but the amount of information they provide makes them excellent for localization and mapping purposes.
 
-% There are two main categories of LiDARs:
-
-% \begin{compactitem}
-%     \item Mechanical (rotational): a laser beam is directed by high-precision mechanisms, enabling $360 \degree $ horizontal field of view
-%     \item Solid-state: no moving components, an array of beams is emitted
-% \end{compactitem}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.6\linewidth]{images/lidar-odometry-tree.pdf}
+    \caption[LiDAR Odometry Approaches]{A visualization of LiDAR odometry methods, grouped by approach: LOAM~\cite{zhang2014loam}, KISS-ICP~\cite{vizzo2023ral},  CT-ICP~\cite{dellenbach2021cticp}, MULLS~\cite{pan2021mulls}, Direct LO~\cite{chen2022directlo}, GenZ-ICP~\cite{lee2024genz}, GLIM~\cite{koide2024glim}, LeGO-LOAM~\cite{legoloam2018}, COIN-LIO~\cite{pfreundschuh2024coin}, LIO-SAM~\cite{shan2020lio}, Fast-LIO~\cite{fastlio}, CAE-LO~\cite{caelo2020}, SSL-LO~\cite{nubert2021self}, DMLO~\cite{li2020dmlo}, LO-Net~\cite{li2019net}, NDT-LOAM~\cite{chen2021ndt}, E-LOAM~\cite{guo2022loam}.}
+    \label{fig:lidar-odometry-family}
+\end{figure}
 
 
 A key reference is \acrfull{loam}, the work of Zhang and Singh \cite{zhang2014loam}, who used a motorized, 2-axis LiDAR scanner to generate 3D point clouds. To register consecutive scans, they perform feature extraction (sharp edges or planar patches), identify correspondences to the previous scan, and find the optimal transformation using the Levenberg-Marquardt method \cite{levenberg1944method,marquardt}. To account for displacement during the beam sweep, points are reprojected by linear interpolation, assuming constant velocity --- this is known as \emph{motion/distortion compensation}. Mapping takes place in parallel, at a slower rate, and the current scan is registered to the map created so far. At that time, this implementation achieved the best results\footnote{\url{https://www.cvlibs.net/datasets/kitti/eval_odometry.php}} on the KITTI Odometry Benchmark \cite{geiger2012kitti}. V-LOAM \cite{zhang2015visual} improved this solution by introducing a visual odometry component based on a fish-eye camera.
