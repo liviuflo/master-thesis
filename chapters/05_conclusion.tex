@@ -20,14 +20,23 @@ Guided by the research questions laid out in the initial stage of the project, t
 
     \item \textit{To what extent is LiDAR-based odometry an alternative to GNSS localization?}
 
-    We have designed, implemented and evaluated a LiDAR-based odometry method which achieves, on average, less than 1m of drift in the XY plane, when travelling for 100m (according to the results in Table~\ref{tab:odom-kitti}). Unsurprisingly, this highlights a general limitation of dead-reckoning methods: small errors that accumulate in time, resulting in poor localization. Therefore, employing LiDAR-based odometry as an alternative to GNSS localization depends on the use-case. If it is used to approximate relatively small local displacements (\eg to increase the frequency of state estimation beyond the frequency of the GPS receiver) or if the the GNSS readings have large uncertainty, LiDAR odometry proves a reliable solution. Another factor is the nature of the environment, as point cloud registration cannot be accurately performed in degenerate or featureless scenes.
+    We have designed, implemented and evaluated a LiDAR-based odometry method which achieves, on average, less than 1m of drift in the horizontal plane, when travelling for 100m (according to the results in Table~\ref{tab:odom-kitti}). Unsurprisingly, this highlights a general limitation of dead-reckoning methods: small errors that accumulate in time, resulting in poor localization. Therefore, employing LiDAR-based odometry as an alternative to GNSS localization depends on the use-case. If it is used to approximate relatively small local displacements (\eg to increase the frequency of state estimation beyond the frequency of the GPS receiver) or if the the GNSS readings have large uncertainty, LiDAR odometry proves a reliable solution. Another limitation is the nature of the environment, as point cloud registration cannot be accurately performed in degenerate or featureless scenes.
 
 \end{compactenum}
 
 % discuss general conclusions about the data used and the problems encountered
 % discuss research questions
 
-% \section{Future Work}
-% Z drift
-% integrate RGB data
-% improve performance
+\section{Future Work}
+
+There are several directions worth investigating for improving the current approach, if more time and human resource is available. One particular issue that surfaced during the evaluation stage was the high drift in the vertical axis. Although it is not unexpected, because we did not employ any particular methods for preventing this (unlike \mbox{LeGO-LOAM \cite{legoloam2018}}, for example), a thorough investigation is required. It could be hypothesized that this is caused by the GICP registration overfitting the alignment between ground regions of the point clouds, in the presence of noisy outliers, or some inaccuracy in the scan de-skewing process.
+
+Performing motion compensation without relying on the poses provided by the INS is another potential improvement which would make our solution applicable to a wider range of systems. This is a vast research problem that could be tackled by extracting the raw IMU measurements from the available sensor, or by developing a dedicated component for correcting the incoming LiDAR scans.
+
+Another limitation of our method is that it does not take into account the beam intensity values provided by the sensor or the RGB camera output, which could prove very useful for registering scans in areas with few useful 3D features. There are methods for performing ICP on point clouds with associated color information \cite{park2017colored}, and LiDAR odometry has benefited from intensity data in the past \cite{pfreundschuh2024coin}.
+
+Although performance was not one of our immediate constraints, we believe that the computational cost of our approach could be reduced drastically if the implementation were done in C++ instead of Python, to meet the requirements of real-time systems. Creating a ROS 2 interface that enables arbitrary robotic setups to forward LiDAR and GPS data to our solution is another possible improvement on the software side.
+
+% dynamic correspondence filtering
+
+% discuss project management?
