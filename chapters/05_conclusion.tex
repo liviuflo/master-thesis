@@ -20,7 +20,7 @@ Guided by the research questions laid out in the initial stage of the project, t
 
     \item \textit{To what extent is LiDAR-based odometry an alternative to GNSS localization?}
 
-    We have designed, implemented and evaluated a LiDAR-based odometry method
+    We have designed, implemented and evaluated a LiDAR-based odometry method which achieves, on average, less than 1m of drift in the XY plane, when travelling for 100m (according to the results in Table~\ref{tab:odom-kitti}). Unsurprisingly, this highlights a general limitation of dead-reckoning methods: small errors that accumulate in time, resulting in poor localization. Therefore, employing LiDAR-based odometry as an alternative to GNSS localization depends on the use-case. If it is used to approximate relatively small local displacements (\eg to increase the frequency of state estimation beyond the frequency of the GPS receiver) or if the the GNSS readings have large uncertainty, LiDAR odometry proves a reliable solution. Another factor is the nature of the environment, as point cloud registration cannot be accurately performed in degenerate or featureless scenes.
 
 \end{compactenum}
 
