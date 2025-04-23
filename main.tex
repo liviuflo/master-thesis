@@ -145,6 +145,7 @@ name={odometry},
 \newcommand{\refch}[1]{(Chapter \ref{ch:#1})}
 
 \hyphenation{time-stamp}
+\hyphenation{encouraging}
 
 % \captionsetup[table]{justification=justified}
 
@@ -152,6 +153,14 @@ name={odometry},
 \maketitle
 % Topic declaration page (mandatory) - can also be attached instead
 \includepdf[pages={2,3}]{other/TDF_liviu_florescu.pdf}
+
+% Acknowledgements (optional) - in case your thesis received funding or would like to express special thanks to someone
+\chapter*{\acklabel}
+\thispagestyle{empty}
+% \addcontentsline{toc}{chapter}{\acklabel}
+\cftaddtitleline{toc}{chapter}{\acklabel}{}
+\input{chapters/acknowledgements}
+\clearpage
 
 % Table of contents (mandatory)
 \tableofcontents
@@ -185,10 +194,6 @@ name={odometry},
 % \input{samples_en/sum.tex}
 % \cleardoublepage
 
-% Acknowledgements (optional) - in case your thesis received funding or would like to express special thanks to someone
-% \chapter*{\acklabel}
-% \addcontentsline{toc}{chapter}{\acklabel}
-% In case your thesis received financial support from a project or the university, it is usually required to indicate the proper attribution in the thesis itself. Special thanks can also be expressed towards teachers, fellow students and colleagues who helped you in the process of creating your thesis.
 
 % Appendices (optional) - useful for detailed information in long tables, many and/or large figures, etc.
 % \appendix
