@@ -405,8 +405,36 @@ A different evaluation strategy consists of dropping GPS readings at regular int
 
 \section{Mapping evaluation}
 
-We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by pasting the LiDAR scans at the RTK-corrected poses. This evaluation consists of plotting the distribution of the point entropy values (see Eq.~\ref{eq:entropy}) and point-to-plane error in various scenes, as shown in Table~\ref{tab:map-eval}. We compute point-to-plane error as the distance between a point and a plane fit to its local neighborhood ($k=10$ nearest neighbors, with distance threshold $d=0.2$m), for points that belong to planar patches. Planar patches are identified using the \texttt{detect\_planar\_patches} function of the Open3D~library\footnote{\href{https://www.open3d.org/docs/latest/python_api/open3d.geometry.PointCloud.html\#open3d.geometry.PointCloud.detect_planar_patches}{Open3D Documentation for \texttt{detect\_planar\_patches}}}. To obtain high-quality patches, we use a maximum allowed ratio of outliers of 0.05 (\texttt{outlier\_ratio}) and constrain the variance of the point normals below 5 degrees (\texttt{normal\_variance\_threshold\_deg}).
+We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by simply pasting the LiDAR scans at the RTK-corrected poses. Every scan is transformed according to the corresponding pose in the trajectory, to obtain global point coordinates. Table~\ref{tab:map-eval-viz} provides a preliminary visual evaluation on KITTI data, with very clear improvements: edges are sharper than when using only GPS measurements. The formal evaluation consists of plotting the distribution of the point entropy values (see Eq.~\ref{eq:entropy}) and point-to-plane error in various scenes, as shown in Table~\ref{tab:map-eval}. We compute point-to-plane error as the distance between a point and a plane fit to its local neighborhood ($k=10$ nearest neighbors, with distance threshold $d=0.2$m), for points that belong to planar patches. Planar patches are identified using the \texttt{detect\_planar\_patches} function of the Open3D~library\footnote{\href{https://www.open3d.org/docs/latest/python_api/open3d.geometry.PointCloud.html\#open3d.geometry.PointCloud.detect_planar_patches}{Open3D Documentation for \texttt{detect\_planar\_patches}}}. To obtain high-quality patches, we use a maximum allowed ratio of outliers of 0.05 (\texttt{outlier\_ratio}) and constrain the variance of the point normals below 5 degrees (\texttt{normal\_variance\_threshold\_deg}).
 We also plot the output obtained when only every 10th GPS reading is used --- fewer GPS contraints enable a higher contribution of the registration result to the final pose estimation. A similar effect can be achieved by increasing the covariance of the INS reading. The results indicate that this improves map quality without damaging the accuracy of the trajectory, particularly in more structured scenes, or where the GPS signal is inaccurate.
+
+
+\begin{table}[h]
+    \centering
+    {\small
+        \begin{tabular}{cc}
+            \textbf{GPS Map}                                                                       & \textbf{Our Map} \\
+            \hline \hline
+            \includegraphics[width=0.44\linewidth]{images/map_compare/kitti/cars/capture_gps.png}  &
+            \includegraphics[width=0.44\linewidth]{images/map_compare/kitti/cars/capture_ours.png}                    \\
+
+            \includegraphics[width=0.44\linewidth]{images/map_compare/kitti/curb/capture_gps.png}  &
+            \includegraphics[width=0.44\linewidth]{images/map_compare/kitti/curb/capture_ours.png}                    \\
+            \hline
+            \multicolumn{2}{c}{Top-down visualization of car outlines and street features}                            \\
+            \hline
+            \includegraphics[width=0.34\linewidth]{images/map_compare/kitti/fence/capture_gps.png} &
+            \includegraphics[width=0.34\linewidth]{images/map_compare/kitti/fence/capture_ours.png}                   \\
+            \hline
+            \multicolumn{2}{c}{Perspective visualization of a fence and surrounding elements}                         \\
+            \hline
+        \end{tabular}
+    }
+
+    \caption{Visual map comparison on KITTI sequence 04. The GPS map is constructed by transforming the LiDAR scans according to the ground truth GPS poses, while our map uses the graph-optimized poses. In our map, contours and scene details are visibly sharper, indicating better scan alignment. The visualization was generated using \href{https://www.danielgm.net/cc/}{CloudCompare}.}
+    \label{tab:map-eval-viz}
+\end{table}
+
 
 \begin{table}[h]
     \centering
@@ -442,7 +470,7 @@ We also plot the output obtained when only every 10th GPS reading is used --- fe
         \end{tabular}
     }
 
-    \caption{Map evaluation in different scenes, comparing raw GPS (blue), our approach with full GPS constraints (orange) and our approach with every 10th GPS reading (green). Point clouds are colored by height, for visualization. For each distribution, the dashed vertical line indicates the median value.\\Compared to GPS-only mapping, our method reduces point entropy and point-to-plane errors, which is equivalent to having smoother planar surfaces and finer visible details. Using every 10th GPS reading improves the map quality even further, as the model relies more on scan alignment.}
+    \caption{Map evaluation in different scenes of our original dataset, comparing raw GPS (blue), our approach with full GPS constraints (orange) and our approach with every 10th GPS reading (green). Point clouds are colored by height, for visualization. For each distribution, the dashed vertical line indicates the median value.\\Compared to GPS-only mapping, our method reduces point entropy and point-to-plane errors, which is equivalent to having smoother planar surfaces and finer visible details. Using every 10th GPS reading improves the map quality even further, as the model relies more on scan alignment.}
     \label{tab:map-eval}
 \end{table}
 
