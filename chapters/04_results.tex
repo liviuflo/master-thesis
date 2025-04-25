@@ -23,6 +23,7 @@ A simple way to compare two pose sequences that start at the same pose is to com
         \text{ATE}_{\text{rot}}   & = \sqrt{\frac{1}{N}\sum_{i=1}^{N} e_{\text{rot}}^2(\matR_i, \widehat{\matR}_i )}
         \eqdot
     \end{aligned}
+    \label{eq:ATE}
 \end{equation}
 We compute this after transforming the ground truth and predicted trajectories such that they begin with $\pose_0 = \matx{I}_4$. In the KITTI Benchmark \cite{geiger2012kitti}, this was extended to \acrfull{rte}, a metric that is applied on sub-sequences of a certain length or velocity, for a detailed evaluation. Given a sub-sequence $(i,j)$, we compute
 $\vect_{i,j} = \transpose{\matR_i}(\vect_j - \vect_i)$
@@ -53,6 +54,7 @@ Another useful metric is given by point entropy, as described in \cite{adolfsson
     h(\pk) = \frac{1}{2}\text{ln}\left(
     2\pi e \text{det}\left(\matx{\Sigma}(\pk)\right)
     \right)
+    \label{eq:entropy}
 \end{equation}
 Adjusting the neighborhood radius controls the granularity of the metric, with a value around 0.2m providing a fair trade-off between detail level and computational cost.
 
@@ -325,7 +327,14 @@ The results of this evaluation are presented in Table~\ref{tab:odom-kitti} and F
 
 So far, our method has been evaluated without any GPS input, essentially acting as a LiDAR-based dead-reckoning solution. In this section, we use the data from the GNSS receiver to imitate a real use-case, and assess the trajectory against a GPS-only approach.
 
-First, we would like to observe how robust the solution is to GPS noise, to mimic a scenario where RTK data is not available, or the GPS signal is very poor. Starting from the existing GPS readings, we introduce artificial noise to the location values by sampling a zero-mean Gaussian distribution for each component, and modify the associated covariance based on the $\sigma$ of the noise distribution. The resulting readings and covariance values are used as input for the method, simulating signal scatter. IMU readings are not affected, but we increase the covariance of the orientation components by 0.01, to allow for adjustments from the graph optimization component. We present the results of this experiment in Table~\ref{tab:gps-noisy}, by comparing the noisy GPS input and the output of our method against the accurate GPS location readings. The same phenomenon is shown in Figure~\ref{fig:gps-noise-correction}.
+First, we would like to observe how robust the solution is to GPS noise, to mimic a scenario where RTK data is not available, or the GPS signal is very poor. Starting from the existing GPS readings, we introduce artificial noise to the location values by sampling a zero-mean Gaussian distribution for each component, and modify the associated covariance based on the $\sigma$ of the noise distribution. The resulting readings and covariance values are used as input for the method, simulating signal scatter. IMU readings are not affected, but we increase the covariance of the orientation components by 0.01, to allow for adjustments from the graph optimization component. We present the results of this experiment in Table~\ref{tab:gps-noisy}. The noisy GPS readings are provided as input, and we evaluate the output of our method against accurate GPS readings. Beside the Absolute Trajectory Error, we compute the roughness of the obtained trajectory using the following procedure:
+\begin{compactenum}
+    \item Generate subsequences of 100 consecutive scans with a sliding window approach.
+    \item For each subsequence, consider the discrete functions $X(t)$, $Y(t)$, $Z(t)$ such that $\transpose{\left[X(t), Y(t), Z(t)\right]}$ is the location of the ego frame at time step $t$.
+    \item Determine the polynomial functions of degree 3 that best approximate $X(t)$, $Y(t)$, $Z(t)$, and compute the ``fitting error'' --- the mean squared error between the obtained polynomials and the original functions. A rugged trajectory will result in a higher error, as the polynomial is not able to match the non-smooth changes.
+    \item Average the errors across all subsequences, for each dimension.
+\end{compactenum}
+Roughness increases with the noise introduced to the GPS readings, but our method produces a smooth trajectory and reconstructs a trajectory that is close to the ground truth, effectively filtering out GPS noise. This phenomenon is shown in Figure~\ref{fig:gps-noise-correction}.
 
 % 0cm, 5cm, 10cm, 50cm, 100cm, 500cm
 % Table columns:
@@ -336,39 +345,36 @@ First, we would like to observe how robust the solution is to GPS noise, to mimi
     {\small
         \begin{tabular}{c|ccccc|ccccc}
             \hline
-            \textbf{Noise} $\sigma$ & \multicolumn{5}{c|}{\textbf{Noisy GPS Input}} & \multicolumn{5}{c}{\textbf{Ours}}                                                                                                                                                                                                     \\
-            (m)                     & \multicolumn{2}{c}{\textbf{ATE} (m)}          & \multicolumn{3}{c|}{\textbf{Roughness} (m)} & \multicolumn{2}{c}{\textbf{ATE} (m)} & \multicolumn{3}{c}{\textbf{Roughness} (m)}                                                                                                       \\
-                                    & \textbf{XY}                                   & \textbf{tra.}                               & \textbf{X}                           & \textbf{Y}                                 & \textbf{Z}     & \textbf{XY}    & \textbf{tra.}  & \textbf{X}     & \textbf{Y}     & \textbf{Z}     \\
+            \textbf{Noise} $\sigma$ & \multicolumn{5}{c|}{\textbf{Noisy GPS Input}} & \multicolumn{5}{c}{\textbf{Ours}}                                                                                                                                                                                             \\
+            (m)                     & \multicolumn{2}{c}{\textbf{ATE} (m)}          & \multicolumn{3}{c|}{\textbf{Roughness}} & \multicolumn{2}{c}{\textbf{ATE} (m)} & \multicolumn{3}{c}{\textbf{Roughness}}                                                                                                       \\
+                                    & \textbf{XY}                                   & \textbf{tra.}                           & \textbf{X}                           & \textbf{Y}                             & \textbf{Z}     & \textbf{XY}    & \textbf{tra.}  & \textbf{X}     & \textbf{Y}     & \textbf{Z}     \\
             \hline
             \hline
-            0.05                    & \textbf{0.114}                                & \textbf{0.134}                              & \textbf{0.005}                       & \textbf{0.007}                             & \textbf{0.002} & \textbf{0.029} & \textbf{0.032} & \textbf{0.003} & \textbf{0.005} & \textbf{0.000} \\
-            0.1                     & 0.228                                         & 0.268                                       & 0.011                                & 0.014                                      & 0.009          & 0.058          & 0.067          & \textbf{0.003} & \textbf{0.005} & 0.001          \\
-            0.5                     & 1.140                                         & 1.340                                       & 0.218                                & 0.241                                      & 0.228          & 0.285          & 0.571          & 0.015          & 0.018          & 0.013          \\
-            1.0                     & 2.280                                         & 2.680                                       & 0.866                                & 0.947                                      & 0.910          & 0.707          & 1.219          & 0.058          & 0.064          & 0.056          \\
-            2.0                     & 4.559                                         & 5.359                                       & 3.457                                & 3.768                                      & 3.641          & 2.165          & 7.623          & 0.2            & 0.212          & 0.223          \\
+            0.05                    & \textbf{0.114}                                & \textbf{0.134}                          & \textbf{0.005}                       & \textbf{0.007}                         & \textbf{0.002} & \textbf{0.029} & \textbf{0.032} & \textbf{0.003} & \textbf{0.005} & \textbf{0.000} \\
+            0.1                     & 0.228                                         & 0.268                                   & 0.011                                & 0.014                                  & 0.009          & 0.058          & 0.067          & \textbf{0.003} & \textbf{0.005} & 0.001          \\
+            0.5                     & 1.140                                         & 1.340                                   & 0.218                                & 0.241                                  & 0.228          & 0.285          & 0.571          & 0.015          & 0.018          & 0.013          \\
+            1.0                     & 2.280                                         & 2.680                                   & 0.866                                & 0.947                                  & 0.910          & 0.707          & 1.219          & 0.058          & 0.064          & 0.056          \\
+            2.0                     & 4.559                                         & 5.359                                   & 3.457                                & 3.768                                  & 3.641          & 2.165          & 7.623          & 0.2            & 0.212          & 0.223          \\
             \hline
         \end{tabular}
     }
-    \caption[Trajectory evaluation with noisy GPS]{Trajectory evaluation with noisy GPS input, on a sequence of 1000 LiDAR scans~(approx. 131.7m), against the zero-noise GPS readings. Roughness is measured by fitting a cubic polynomial to subsequences of each dimension --- X, Y and Z, as a function of time --- and averaging the fitting error across all subsequences. Our method is able to filter out GPS noise, reconstructing a trajectory that is smoother and closer to the ground truth.}
+    \caption[Trajectory evaluation with noisy GPS]{Trajectory evaluation with noisy GPS input, on a sequence of 1000 LiDAR scans~(approx. 131.7m), against the zero-noise GPS readings. Roughness is measured by fitting a cubic polynomial to subsequences of each dimension --- X, Y and Z, as a function of time --- and averaging the fitting error across all subsequences. Our method filters out GPS noise, reconstructing a trajectory that is smoother and closer to the ground truth.}
     \label{tab:gps-noisy}
 \end{table}
 \begin{figure}[h]
     \centering
-    \subcaptionbox{A straight region.}{
-        \includegraphics[width=0.475\linewidth]{images/noisy_gps/noisy_01.pdf}
+    \subcaptionbox{A curved region.}{
+        \includegraphics[width=0.475\linewidth]{images/noisy_gps/curved.pdf}
     }
     \subcaptionbox{A corner region.}{
-        \includegraphics[width=0.475\linewidth]{images/noisy_gps/noisy_corner.pdf}
+        \includegraphics[width=0.475\linewidth]{images/noisy_gps/corner.pdf}
     }
-    \caption[Trajectory corrections over noisy GPS]{Trajectory corrections on noisy GPS input, $\sigma = 0.1$. The path computed by our method (blue) is smoother and closer to the expected path (pink) compared to the noisy GPS path (brown).}
+    \caption[Trajectory corrections over noisy GPS]{Trajectory corrections on noisy GPS input, $\sigma = 0.1$. The path computed by our method (orange) is smoother and closer to the expected path (green) compared to the noisy GPS path (blue).}
     \label{fig:gps-noise-correction}
 \end{figure}
 
 
-% using less gps on our data
-A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and re-acquired after a period of time, indicating that our method is also capable of handling such scenarios, common when the vehicle is traversing a vegetation-filled region.
 
-% no skip, 5, 10, 50, 100, 500
 
 \begin{table}[h]
     \centering
@@ -394,10 +400,12 @@ A different evaluation strategy consists of dropping GPS readings at regular int
     \caption{Trajectory evaluation with varying GPS Skip Factor, on a sequence of 1000 LiDAR scans. The ground truth that we test against are the GPS readings provided as input to the method. As expected, the error increases as fewer GPS frequency decreases, but the magnitude of the errors remains small, even when few readings are used.}
     \label{tab:gps-skip}
 \end{table}
+% using less gps on our data
+A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and re-acquired after a period of time, indicating that our method is also capable of handling such scenarios, common when the vehicle is traversing a vegetation-filled region.
 
 \section{Mapping evaluation}
 
-We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by pasting the LiDAR scans at the RTK-corrected poses. This evaluation consists of plotting the distribution of the point entropy values and point-to-plane error in various scenes, as shown in Table~\ref{tab:map-eval}. We compute point-to-plane error as the distance between a point and a plane fit to its local neighborhood ($k=10$ nearest neighbors, with distance threshold $d=0.2$m), for points that belong to planar patches. Planar patches are identified using the \texttt{detect\_planar\_patches} function of the Open3D~library\footnote{\href{https://www.open3d.org/docs/latest/python_api/open3d.geometry.PointCloud.html\#open3d.geometry.PointCloud.detect_planar_patches}{Open3D Documentation for \texttt{detect\_planar\_patches}}}.
+We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by pasting the LiDAR scans at the RTK-corrected poses. This evaluation consists of plotting the distribution of the point entropy values (see Eq.~\ref{eq:entropy}) and point-to-plane error in various scenes, as shown in Table~\ref{tab:map-eval}. We compute point-to-plane error as the distance between a point and a plane fit to its local neighborhood ($k=10$ nearest neighbors, with distance threshold $d=0.2$m), for points that belong to planar patches. Planar patches are identified using the \texttt{detect\_planar\_patches} function of the Open3D~library\footnote{\href{https://www.open3d.org/docs/latest/python_api/open3d.geometry.PointCloud.html\#open3d.geometry.PointCloud.detect_planar_patches}{Open3D Documentation for \texttt{detect\_planar\_patches}}}. To obtain high-quality patches, we use a maximum allowed ratio of outliers of 0.05 (\texttt{outlier\_ratio}) and constrain the variance of the point normals below 5 degrees (\texttt{normal\_variance\_threshold\_deg}).
 We also plot the output obtained when only every 10th GPS reading is used --- fewer GPS contraints enable a higher contribution of the registration result to the final pose estimation. A similar effect can be achieved by increasing the covariance of the INS reading. The results indicate that this improves map quality without damaging the accuracy of the trajectory, particularly in more structured scenes, or where the GPS signal is inaccurate.
 
 \begin{table}[h]
