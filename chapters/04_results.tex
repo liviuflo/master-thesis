@@ -336,9 +336,7 @@ First, we would like to observe how robust the solution is to GPS noise, to mimi
 \end{compactenum}
 Roughness increases with the noise introduced to the GPS readings, but our method produces a smooth trajectory and reconstructs a trajectory that is close to the ground truth, effectively filtering out GPS noise. This phenomenon is shown in Figure~\ref{fig:gps-noise-correction}.
 
-% 0cm, 5cm, 10cm, 50cm, 100cm, 500cm
-% Table columns:
-% Noise sigma, 
+A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and re-acquired after a period of time, indicating that our method is also capable of handling such scenarios, common when the vehicle is traversing a vegetation-filled region.
 
 \begin{table}[h!]
     \centering
@@ -373,9 +371,6 @@ Roughness increases with the noise introduced to the GPS readings, but our metho
     \label{fig:gps-noise-correction}
 \end{figure}
 
-
-
-
 \begin{table}[h]
     \centering
     {\small
@@ -400,9 +395,7 @@ Roughness increases with the noise introduced to the GPS readings, but our metho
     \caption{Trajectory evaluation with varying GPS Skip Factor, on a sequence of 1000 LiDAR scans. The ground truth that we test against are the GPS readings provided as input to the method. As expected, the error increases as fewer GPS frequency decreases, but the magnitude of the errors remains small, even when few readings are used.}
     \label{tab:gps-skip}
 \end{table}
-% using less gps on our data
-A different evaluation strategy consists of dropping GPS readings at regular intervals, to simulate a lower reading frequency. We define a skip factor $k$ and disregard the GPS information associated with LiDAR scan $i$, if $i \text{ mod } k =1$. We evaluate for multiple $k$ values on the same sequence as before (1000 LiDAR scans, 131.7m), and present the results in Table~\ref{tab:gps-skip}. This is an alternative evaluation of the pure odometry capabilities, showing that our method relies very little on the GPS readings for accurate trajectory estimation, so it can be applied to systems that do not have a high-frequency GPS receiver. We observe that this is equivalent to having regions where the GPS fix is lost and re-acquired after a period of time, indicating that our method is also capable of handling such scenarios, common when the vehicle is traversing a vegetation-filled region.
-
+\clearpage
 \section{Mapping evaluation}
 
 We are interested in observing how our solution affects map quality, in comparison with the 3D map constructed by simply pasting the LiDAR scans at the RTK-corrected poses. Every scan is transformed according to the corresponding pose in the trajectory, to obtain global point coordinates. Table~\ref{tab:map-eval-viz} provides a preliminary visual evaluation on KITTI data, with very clear improvements: edges are sharper than when using only GPS measurements. The formal evaluation consists of plotting the distribution of the point entropy values (see Eq.~\ref{eq:entropy}) and point-to-plane error in various scenes, as shown in Table~\ref{tab:map-eval}. We compute point-to-plane error as the distance between a point and a plane fit to its local neighborhood ($k=10$ nearest neighbors, with distance threshold $d=0.2$m), for points that belong to planar patches. Planar patches are identified using the \texttt{detect\_planar\_patches} function of the Open3D~library\footnote{\href{https://www.open3d.org/docs/latest/python_api/open3d.geometry.PointCloud.html\#open3d.geometry.PointCloud.detect_planar_patches}{Open3D Documentation for \texttt{detect\_planar\_patches}}}. To obtain high-quality patches, we use a maximum allowed ratio of outliers of 0.05 (\texttt{outlier\_ratio}) and constrain the variance of the point normals below 5 degrees (\texttt{normal\_variance\_threshold\_deg}).
