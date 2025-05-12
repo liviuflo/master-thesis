@@ -1,0 +1,2 @@
+Accurate 3D mapping is essential for many robotic applications, and we address the particular use-case of commercial-grade surveying.
+We develop a generic method for odometry estimation and 3D mapping that takes accurate GPS readings as input and refines the trajectory using information from a rotating LiDAR, to improve the quality of the output map and reduce dependency on a sensor with fluctuating signal quality.
